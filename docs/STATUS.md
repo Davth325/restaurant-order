@@ -1,13 +1,16 @@
 # Trạng thái hiện tại
 
-Cập nhật: 30/10/2026 — khởi động lại môi trường và chuẩn bị lưu phiên bản bộ khung đầu tiên lên GitHub.
+Cập nhật: 30/10/2026 — đã khởi động lại môi trường, lưu bộ khung đầu tiên lên GitHub và kiểm chứng CI Linux thành công.
 
 ## Khởi động lại và lưu phiên bản — 30/10/2026
 
 - Đã mở Docker Desktop, PostgreSQL healthy; giữ nguyên .env và volume dữ liệu cũ. `dev.ps1 build` chạy lại thành công: npm ci/lint/frontend build và 6 test PostgreSQL/Testcontainers đạt.
 - Đã cấu hình origin `https://github.com/Davth325/restaurant-order.git`. `git ls-remote` thành công và repository đích trống trước khi đưa source lên; Git Credential Manager có tài khoản Davth325, không đưa credential vào source/log.
 - Đã rà 68 file source dự kiến commit: không có .env, cache/dependency/build/log/data database; không tìm thấy mật khẩu local, mẫu token hoặc private key. Gradle Wrapper jar và frontend lockfile nằm trong source; bản jar ứng dụng không đưa lên Git.
-- Preview đã chạy lại tại http://127.0.0.1:8080; health UP, API đọc đủ B01–B30; 3 test Chromium đạt. Đang chuẩn bị commit đầu tiên, push main, tag v0.1.0-m1. Chưa ghi nhận push hoặc CI từ xa thành công ở thời điểm ghi mục này.
+- Preview đã chạy lại tại http://127.0.0.1:8080; health UP, API đọc đủ B01–B30; 3 test Chromium đạt.
+- Đã commit/push bộ khung: `8260b1cd67b8cce961438a9813eabfab762eb2da` — `feat: save initial M1 restaurant ordering scaffold`. Nhánh main theo dõi origin/main. GitHub API xác nhận 68 file, không có file cần loại trừ; SHA cây source trong commit GitHub khớp cây local `827fc33af5f36ccfcb3f95f09cca6d8a7f751330`.
+- [GitHub Actions lần đầu](https://github.com/Davth325/restaurant-order/actions/runs/41062661036) đã completed/success cho commit bộ khung 8260b1c: frontend lint/typecheck/build, Gradle build/test PostgreSQL, khởi động jar/Compose và browser flow trên Ubuntu đều đạt. Đây là bằng chứng CI cho commit đó; các run do tag hoặc commit tài liệu sau đó cần xem trạng thái riêng, không tự coi đã đạt.
+- Đã tạo và push [tag v0.1.0-m1](https://github.com/Davth325/restaurant-order/tree/v0.1.0-m1) trỏ đúng commit bộ khung `8260b1cd67b8cce961438a9813eabfab762eb2da`. Tag là mốc source đầu tiên, không gồm .env hoặc dữ liệu PostgreSQL local. `git ls-remote` xác nhận main và tag có trên GitHub; bản cập nhật STATUS này được lưu bằng commit tài liệu riêng.
 
 ## Đã làm
 
@@ -16,7 +19,7 @@ Cập nhật: 30/10/2026 — khởi động lại môi trường và chuẩn b�
 - React + TypeScript + Vite: hiển thị dữ liệu thật, lọc khu vực, tải lại, báo lỗi mạng và đánh dấu snapshot cũ. UI đóng gói cùng jar; Vite proxy dùng cho phát triển. Chỉ bind localhost, chưa có quyền/phiên hay mutation nghiệp vụ.
 - PostgreSQL Compose khóa image/digest, volume bền vững và healthcheck; .env.example chỉ có mẫu giả. Initialize-Dev tạo mật khẩu local ngẫu nhiên trong .env bị Git bỏ qua.
 - Script Windows khởi động/dừng/build/test và preview nền; đã thử cả Windows PowerShell cho Start-Preview/status. README/AGENTS ghi lệnh thật; DEVELOPMENT ghi phiên bản. D005/D006 xác nhận theo yêu cầu thực hiện M1, D017/D018 ghi lựa chọn triển khai.
-- `.github/workflows/ci.yml` cấu hình frontend checks/build, Gradle/PostgreSQL tests và Playwright với jar trên Linux. Chưa có kết quả GitHub Actions.
+- `.github/workflows/ci.yml` cấu hình frontend checks/build, Gradle/PostgreSQL tests và Playwright với jar trên Linux; kết quả mới ở mục ngày 30/10 phía trên.
 
 ## Bằng chứng kiểm tra thực tế
 
@@ -56,4 +59,4 @@ Integration test kiểm tra profile mặc định không seed, demo đủ 30 bà
 - Kết quả push/CI của M1.6 theo mục ngày 30/10 phía trên; không coi local build là bằng chứng Linux/GitHub Actions đã đạt.
 - Chưa có đăng nhập, phiên bàn, gửi món, bếp hoặc thu tiền. Chốt D008/D009 và loại menu trước M2; các luật tiền/hủy/giảm trước module tương ứng.
 - Chưa thử LAN/WAN, iPad/Safari thật, máy chủ tại quán, tải 30 phiên đồng thời, HTTPS, backup/restore. Kiến trúc tại quán vẫn là đề xuất.
-- Tiếp theo: hoàn tất kiểm tra/lưu bộ khung lên GitHub theo yêu cầu ngày 30/10; sau đó chủ dự án thử lọc/làm mới và giao M2 theo một lát cắt quyền/phiên/menu/gửi món được chốt riêng.
+- Tiếp theo: chủ dự án thử ứng dụng đang chạy ở localhost:8080 và xem tag v0.1.0-m1 trên GitHub; sau đó giao M2 theo một lát cắt quyền/phiên/menu/gửi món được chốt riêng. M1.6 đã có bằng chứng GitHub Actions Linux cho commit bộ khung.
