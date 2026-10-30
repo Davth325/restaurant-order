@@ -1,6 +1,16 @@
 # Trạng thái hiện tại
 
-Cập nhật: 30/10/2026 — người dùng đã thử menu và xác nhận hoạt động ổn; đã review, sửa lỗi phục hồi và kiểm tra lại. Bước tiếp theo: đăng nhập nhân viên/bếp. Bằng chứng M1/GitHub cũ bên dưới không đại diện cho thay đổi menu chưa push.
+Cập nhật: 30/10/2026 — menu đã được người dùng thử, review, commit/push lên GitHub và CI Linux thành công cho đúng commit menu. Bước tiếp theo: đăng nhập nhân viên/bếp.
+
+## Push menu và kiểm chứng CI GitHub — 30/10/2026
+
+- **Nhánh và quy trình thực tế:** local đang ở `main`, theo dõi `origin/main`; không có nhánh tính năng hoặc hướng dẫn PR bắt buộc trong repository. GitHub API xác nhận default branch `main`, nhánh không được bảo vệ và tài khoản có quyền push. Đã push fast-forward theo luồng hiện có; không force push, không tạo PR vì thay đổi đang ở `main`.
+- **Commit menu đã lên GitHub:** [`430062867a28685063e9f981f204715490606b09` — feat: add database-backed sample menu](https://github.com/Davth325/restaurant-order/commit/430062867a28685063e9f981f204715490606b09). `git push origin main` thành công từ `c58445d` tới `4300628`; sau push, HEAD và origin/main khớp SHA này.
+- **Rà trước push:** kiểm tra lại Git index 88 file bằng đối chiếu secret local và mẫu token/private key, không phát hiện vấn đề; `git diff --check` đạt, working tree sạch. Không đưa `.env`, log, dependency, build hoặc dữ liệu database lên GitHub.
+- **Workflow hiện có:** `.github/workflows/ci.yml` — `Build and test`, đang active, chạy khi push/pull_request. Đã đọc nội dung và xác nhận trên GitHub; có lint/typecheck/build frontend, Java 21/Gradle clean build với PostgreSQL/Testcontainers, khởi động PostgreSQL Compose + jar và kiểm thử Playwright Chromium. Phù hợp phạm vi menu, không cần bổ sung hoặc giảm kiểm tra.
+- **Kết quả thực tế:** [GitHub Actions run 41073537758](https://github.com/Davth325/restaurant-order/actions/runs/41073537758) có `head_sha=430062867a28685063e9f981f204715490606b09`, event `push`, trạng thái **completed**, kết luận **success**. [Job verify](https://github.com/Davth325/restaurant-order/actions/runs/41073537758/job/124123571466) xác nhận các bước frontend checks/build, backend build/test PostgreSQL, chuẩn bị môi trường, chạy jar, browser flow và dừng database đều success. Không có lỗi CI cần sửa hoặc bước bị bỏ qua để làm xanh.
+- **Phạm vi bằng chứng:** kết quả trên áp dụng chính xác commit menu `4300628`; khác với các run M1 cũ. Bản cập nhật STATUS này được lưu và push bằng commit tài liệu riêng; xem SHA/run tương ứng trên GitHub, không suy kết quả của commit tài liệu chỉ từ run menu.
+- **Hạn chế/bước tiếp:** giữ các hạn chế local/thiết bị thật đã nêu ở phần review; CI Linux không thay thế thử iPad/Safari hoặc LAN/WAN tại quán. Menu đã hoàn tất và có mốc GitHub/CI; việc tiếp theo là đăng nhập nhân viên/bếp, chưa triển khai trong phần menu này.
 
 ## Review và bàn giao menu — 30/10/2026
 
@@ -11,7 +21,7 @@ Cập nhật: 30/10/2026 — người dùng đã thử menu và xác nhận ho�
 - **Browser sau sửa:** `scripts/Start-Preview.ps1`, rồi tại frontend đặt `E2E_BASE_URL=http://127.0.0.1:8080` và chạy `npm.cmd run test:e2e` → **13/13 Chromium đạt** (10 menu gồm 3 hồi quy mới, 3 bàn). Bao gồm menu thật/reload/giá/ảnh/trạng thái, lỗi/rỗng/thử lại, tablet dọc/ngang và màn hình nhỏ.
 - **Review quyền/tiền/dữ liệu:** không có API ghi hoặc thay đổi đơn/thanh toán; seed không ghi đè giá/trạng thái; request cũ không cập nhật sau khi rời trang; mất kết nối không dựng menu giả. Không phát hiện thêm lỗi chặn bàn giao trong phạm vi menu chỉ đọc sau khi sửa và chạy lại kiểm tra.
 - **Kiểm tra trước commit:** đối chiếu giá trị secret trong `.env` với source và bundle, quét mẫu token/private key và rà tên file; không phát hiện secret hoặc file môi trường thật trong nội dung đưa vào commit. `.env`, `.work`, dependency, build, log và dữ liệu database bị Git ignore; `.env.example` chỉ là mẫu giả. Kiểm tra lại trên Git index trước commit; `git diff --check` đạt. Đây là rà local theo mẫu/giá trị đã biết, không phải chứng nhận security audit toàn hệ thống.
-- **Mốc lưu:** Git đã cấu hình local và origin; commit bàn giao có tiêu đề `feat: add database-backed sample menu`, gồm menu và phần review này. Xem SHA bằng `git log -1 --oneline`. Chưa push; CI Linux cho menu chưa chạy. Lịch sử CI M1 không được coi là bằng chứng cho menu.
+- **Mốc lưu:** commit bàn giao `4300628` — `feat: add database-backed sample menu`, gồm menu và phần review này. Đã push/CI thành công theo mục ngày 30/10 phía trên; lịch sử CI M1 không được coi là bằng chứng cho menu.
 - **Hạn chế còn lại:** chỉ demo local, chưa có đăng nhập/phân quyền; chưa thử Safari/iPad thật, LAN/WAN, tải đồng thời hoặc backup/restore. Ảnh là minh họa local, chưa có upload/quản trị menu, giỏ/gửi món/bếp/thu tiền. Không còn việc menu đang dở cần chặn bước tiếp.
 - **Bước tiếp theo được người dùng giao:** đăng nhập nhân viên/bếp; triển khai ở task kế tiếp, gồm xác thực và phân quyền server phù hợp. Chưa bắt đầu tính năng đăng nhập trong commit menu này; vẫn giữ localhost trước khi có quyền và kiểm tra tương ứng.
 - **Tự kiểm chứng:** preview tại http://127.0.0.1:8080; F5/menu nhóm/món hết vẫn hoạt động. Chặn request ảnh rồi Làm mới để thấy placeholder, bỏ chặn và Làm mới để phục hồi ảnh; sau lỗi API, giữ request thử lại ở trạng thái chờ để thấy cảnh báo dữ liệu cũ còn nguyên. Chi tiết lệnh ở README và test hồi quy ở `frontend/tests/menu.spec.ts`.
@@ -51,7 +61,7 @@ Mục menu ban đầu bên dưới giữ bằng chứng triển khai trước re
 
 - Preview UI + API tại http://127.0.0.1:8080; PostgreSQL demo được giữ nguyên. Mở trang chủ, thử ba nhóm món, kiểm tra Bún chả Hà Nội có nhãn Hết món, nhấn F5 và Làm mới; chọn Sơ đồ bàn để xem màn hình cũ. API đối chiếu tại `/api/menu`.
 - Thử lỗi: DevTools Network → Offline rồi Làm mới; thấy cảnh báo dữ liệu cũ. Bỏ Offline, bấm Tải lại thực đơn để phục hồi. Lệnh khởi động/dừng và kiểm thử ở README.
-- Không còn phần menu mẫu đang dở hoặc vướng mắc nghiệm thu local. Hạn chế và mốc commit sau review ở mục bàn giao phía trên; chưa push/chạy CI Linux cho menu.
+- Không còn phần menu mẫu đang dở hoặc vướng mắc nghiệm thu local. Hạn chế, mốc commit sau review và bằng chứng push/CI Linux cho menu ở các mục phía trên.
 - Người dùng đã thử menu ổn. Bước tiếp sau review là đăng nhập nhân viên/bếp; chưa thêm giỏ, quản trị menu, bếp hoặc thu tiền.
 
 Các mục dưới đây ghi lịch sử bộ khung M1 trước menu; số test/khả năng trong các mục M1 chỉ áp dụng tại thời điểm đó.
