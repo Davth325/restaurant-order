@@ -1,0 +1,26 @@
+# Local credentials
+.env
+.env.*
+**/.env
+**/.env.*
+!.env.example
+!**/.env.example
+
+# Generated files
+.work/
+.gradle/
+**/.gradle/
+**/build/
+**/node_modules/
+**/dist/
+**/test-results/
+**/playwright-report/
+*.log
+*.pid
+
+# Editors / OS
+.idea/
+.vscode/
+*.iml
+.DS_Store
+Thumbs.db
