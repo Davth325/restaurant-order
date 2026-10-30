@@ -1,12 +1,23 @@
 # Trạng thái hiện tại
 
-Cập nhật: 30/10/2026 — người dùng đã tự thử và xác nhận đăng nhập được, yêu cầu hoàn thiện và chốt bước 6.2. Đã review và kiểm thử local; đang chốt commit/push và kiểm tra CI cho đúng SHA mới. Bước tiếp: 6.3 — danh sách bàn và mở phiên phục vụ.
+Cập nhật: 30/10/2026 — bước 6.2 đã được người dùng thử đăng nhập thành công, review, commit/push và CI Linux thành công cho đúng commit đăng nhập. Bước tiếp: 6.3 — danh sách bàn và mở phiên phục vụ.
+
+## Chốt bước 6.2 và kiểm chứng CI GitHub — 30/10/2026
+
+- **Xác nhận của người dùng:** đã tự thử và đăng nhập được, yêu cầu hoàn thiện và chốt. Không suy rằng người dùng đã thử tay mọi ca logout/CSRF/sai quyền/expiry; các ca đó có bằng chứng tự động bên dưới.
+- **Review cuối:** đọc lại code identity/UI/migration/test, diff và workflow; không phát hiện lỗi chặn chốt trong phạm vi 6.2. Không thay đổi hành vi sau bản người dùng đã thử, không mở thêm chức năng 6.3/6.10. Báo cáo local còn xác nhận 16/16 PostgreSQL và 20/20 Chromium, typecheck/lint/build đạt; lệnh và phạm vi kiểm tra ở mục triển khai dưới đây.
+- **Kiểm tra trước commit:** `git diff --cached --check` đạt; quét 100 file trong Git index theo secret thật trong `.env` và mẫu token/private key, không phát hiện giá trị nhạy cảm hoặc file môi trường/build/log/dependency. `.env`, `.work`, test-results và output build vẫn bị ignore. Không đưa mật khẩu demo thật vào Git.
+- **Nhánh và quyền:** GitHub API xác nhận default branch `main`, nhánh không được bảo vệ, tài khoản có quyền push. `git fetch origin` xác nhận remote/local cùng baseline `befbd1730c97435fa36c5fff69a08097dfa59f15`; tiếp tục luồng main hiện có, không force push hoặc tạo PR không cần thiết.
+- **Commit đã push:** [`9cd161cb84c760ea28f3acba84968b06d74e4979` — feat: add staff and kitchen session authentication](https://github.com/Davth325/restaurant-order/commit/9cd161cb84c760ea28f3acba84968b06d74e4979), 34 file thay đổi. `git push origin main` thành công, fast-forward `befbd17..9cd161c`; local và origin/main khớp sau push.
+- **CI thực tế:** [Build and test — run 41079268240](https://github.com/Davth325/restaurant-order/actions/runs/41079268240), event `push`, `head_sha=9cd161cb84c760ea28f3acba84968b06d74e4979`, trạng thái **completed**, kết luận **success**. [Job verify 124143697550](https://github.com/Davth325/restaurant-order/actions/runs/41079268240/job/124143697550) và các bước frontend checks/build, backend clean build/PostgreSQL tests, chuẩn bị demo, chạy jar, browser flow, dừng database đều **success**; không bỏ hoặc giảm kiểm tra để làm xanh.
+- **Phạm vi bằng chứng:** run trên áp dụng chính xác commit chức năng `9cd161c`, không lấy kết quả CI menu cũ làm bằng chứng. Bản ghi kết quả CI này được lưu và push bằng commit tài liệu riêng; không suy kết quả CI của commit tài liệu từ run chức năng.
+- **Trạng thái bàn giao:** 6.2 đã chốt, không còn vướng mắc triển khai trong phạm vi này. Giữ giới hạn localhost/thiết bị thật/HTTPS ở dưới; CI Linux không thay thế thử Safari/iPad hoặc mạng quán. Bước tiếp là **6.3 — danh sách bàn và mở phiên phục vụ**; quản trị tài khoản vẫn để 6.10.
 
 ## Bước 6.2 — đăng nhập nhân viên/bếp, người dùng đã thử thành công
 
 ### Đã hoàn thành
 
-- Đọc AGENTS/README và tài liệu sản phẩm/nghiệp vụ/kiến trúc/UX/quyết định/kiểm thử/vận hành; đối chiếu code thật. Bắt đầu trên `main`, cây làm việc sạch, HEAD `befbd17` sau commit menu `4300628`. STATUS ghi nhận CI menu thành công cho SHA cũ; không dùng ghi nhận đó làm bằng chứng CI của 6.2, không kiểm tra lại run GitHub trong lượt này. Giữ nhánh và stack hiện có; chưa commit/push.
+- Đọc AGENTS/README và tài liệu sản phẩm/nghiệp vụ/kiến trúc/UX/quyết định/kiểm thử/vận hành; đối chiếu code thật. Bắt đầu trên `main`, cây làm việc sạch, HEAD `befbd17` sau commit menu `4300628`. STATUS ghi nhận CI menu thành công cho SHA cũ; không dùng ghi nhận đó làm bằng chứng CI của 6.2. Giữ nhánh và stack hiện có; commit/push/CI sau khi người dùng thử theo mục chốt phía trên.
 - Thêm Spring Security bằng BOM hiện có, tài khoản PostgreSQL/BCrypt cost 12; Flyway **V3** thêm staff_user, không sửa V1/V2. Java migration `R__demo_staff` chỉ profile demo, lấy hai mật khẩu riêng từ môi trường, băm trước prepared INSERT, không ghi đè tài khoản đã có. Profile mặc định chỉ schema, không tài khoản demo.
 - Phân quyền backend: STAFF xem API bàn, KITCHEN vào API khu vực bếp, `/auth/me` yêu cầu phiên; GET menu/health/UI công khai, API khác mặc định từ chối. Chưa cần MANAGER; không cấp quyền thu tiền/hủy/giảm hoặc quản trị. Quyền hiện có ghi ở DOMAIN, lựa chọn triển khai ở D020/ARCHITECTURE.
 - Login/logout bằng session phía server, chống fixation, cookie HttpOnly/SameSite Strict/cookie-only; CSRF cả login/logout, token cũ không dùng lại sau login. API trả 401/403 JSON, lỗi thông tin đăng nhập chung không lộ credential/hash. Timeout mặc định 30 phút không request dùng phiên, restart buộc login lại, không mất tài khoản.
@@ -33,9 +44,9 @@ Lỗi đã gặp và xử lý: sandbox chặn Gradle loopback/Docker nên chạy
 ### Đang chạy / chưa kiểm chứng / bước tiếp
 
 - Preview cuối tại **http://127.0.0.1:8080/#login**, PostgreSQL demo còn chạy. Tài khoản `nhanvien`/`bep`; mật khẩu tương ứng là DEMO_STAFF_PASSWORD/DEMO_KITCHEN_PASSWORD trong `.env` root, không chép mật khẩu thật vào tài liệu. README có các bước thử hai cửa sổ riêng, gọi API trực tiếp, logout và đặt timeout 1 phút để thử tay.
-- Không còn phần triển khai 6.2 đang dở chặn nghiệm thu local. Người dùng xác nhận đã thử đăng nhập thành công và giao chốt; đây là bằng chứng thử tay đăng nhập, không thay thế các kiểm tra tự động về logout/CSRF/quyền/expiry. Đã rà lại code, báo cáo 16 test PostgreSQL và 20 test Chromium đạt, workflow Linux và diff trước lưu; kết quả push/CI sẽ ghi riêng theo SHA thực tế. Các run M1/menu phía dưới không phải bằng chứng CI của 6.2.
+- Không còn phần triển khai 6.2 đang dở chặn nghiệm thu local. Người dùng xác nhận đã thử đăng nhập thành công và giao chốt; đây là bằng chứng thử tay đăng nhập, không thay thế các kiểm tra tự động về logout/CSRF/quyền/expiry. Đã rà lại code, báo cáo 16 test PostgreSQL và 20 test Chromium đạt, workflow Linux và diff trước lưu; kết quả push/CI theo SHA thực tế ở mục chốt phía trên. Các run M1/menu phía dưới không phải bằng chứng CI của 6.2.
 - Chưa thử Safari/iPad thật, LAN/WAN/HTTPS, tải đồng thời tại quán hoặc timeout 30 phút bằng tay (tự động đã kiểm tra expiry thật với thời hạn ngắn). Giữ localhost, Secure=false chỉ demo HTTP local; chưa tuyên bố sẵn sàng dùng thật.
-- Quản trị/reset/thu hồi mọi phiên khi đổi tài khoản để 6.10. Sau khi chốt commit/push/CI, bước tiếp là **6.3 — danh sách bàn và mở phiên phục vụ**; không tự thực hiện trong 6.2.
+- Quản trị/reset/thu hồi mọi phiên khi đổi tài khoản để 6.10. Bước tiếp sau 6.2 đã chốt là **6.3 — danh sách bàn và mở phiên phục vụ**; không tự thực hiện trong 6.2.
 
 Các mục bên dưới là lịch sử trước 6.2; những câu “chưa có đăng nhập” áp dụng tại thời điểm ghi nhận đó.
 
