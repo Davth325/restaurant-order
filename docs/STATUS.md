@@ -1,6 +1,43 @@
 # Trạng thái hiện tại
 
-Cập nhật: 30/10/2026 — menu đã được người dùng thử, review, commit/push lên GitHub và CI Linux thành công cho đúng commit menu. Bước tiếp theo: đăng nhập nhân viên/bếp.
+Cập nhật: 30/10/2026 — người dùng đã tự thử và xác nhận đăng nhập được, yêu cầu hoàn thiện và chốt bước 6.2. Đã review và kiểm thử local; đang chốt commit/push và kiểm tra CI cho đúng SHA mới. Bước tiếp: 6.3 — danh sách bàn và mở phiên phục vụ.
+
+## Bước 6.2 — đăng nhập nhân viên/bếp, người dùng đã thử thành công
+
+### Đã hoàn thành
+
+- Đọc AGENTS/README và tài liệu sản phẩm/nghiệp vụ/kiến trúc/UX/quyết định/kiểm thử/vận hành; đối chiếu code thật. Bắt đầu trên `main`, cây làm việc sạch, HEAD `befbd17` sau commit menu `4300628`. STATUS ghi nhận CI menu thành công cho SHA cũ; không dùng ghi nhận đó làm bằng chứng CI của 6.2, không kiểm tra lại run GitHub trong lượt này. Giữ nhánh và stack hiện có; chưa commit/push.
+- Thêm Spring Security bằng BOM hiện có, tài khoản PostgreSQL/BCrypt cost 12; Flyway **V3** thêm staff_user, không sửa V1/V2. Java migration `R__demo_staff` chỉ profile demo, lấy hai mật khẩu riêng từ môi trường, băm trước prepared INSERT, không ghi đè tài khoản đã có. Profile mặc định chỉ schema, không tài khoản demo.
+- Phân quyền backend: STAFF xem API bàn, KITCHEN vào API khu vực bếp, `/auth/me` yêu cầu phiên; GET menu/health/UI công khai, API khác mặc định từ chối. Chưa cần MANAGER; không cấp quyền thu tiền/hủy/giảm hoặc quản trị. Quyền hiện có ghi ở DOMAIN, lựa chọn triển khai ở D020/ARCHITECTURE.
+- Login/logout bằng session phía server, chống fixation, cookie HttpOnly/SameSite Strict/cookie-only; CSRF cả login/logout, token cũ không dùng lại sau login. API trả 401/403 JSON, lỗi thông tin đăng nhập chung không lộ credential/hash. Timeout mặc định 30 phút không request dùng phiên, restart buộc login lại, không mất tài khoản.
+- UI form tiếng Việt, sai thông tin/mạng lỗi và thử lại, xóa input mật khẩu sau gửi; tự vào sơ đồ bàn hoặc khu vực bếp theo vai trò. Sai trang có báo từ chối quyền. Mất phiên trên tab đang xem bỏ dữ liệu nội bộ và mời login lại; kiểm tra khi quay lại tab. Logout mất mạng báo chưa xác nhận và cho thử lại.
+- Menu công khai tiếp tục hoạt động. Sơ đồ bàn vẫn chỉ đọc; khu vực bếp chỉ là điểm vào được bảo vệ, chưa có hàng đợi món. Không mở rộng sang mở phiên/gọi món/tiền/quản trị tài khoản.
+- Initialize-Dev giữ cấu hình/mật khẩu đã có, bổ sung DEMO_STAFF_PASSWORD/DEMO_KITCHEN_PASSWORD ngẫu nhiên vào `.env` bị Git ignore. Cập nhật README/AGENTS/PRODUCT/DOMAIN/ARCHITECTURE/UX/DECISIONS/TESTING/OPERATIONS.
+
+### Bằng chứng kiểm tra thực tế
+
+| Lệnh / kiểm tra | Kết quả |
+| --- | --- |
+| Trong frontend: `npm.cmd run typecheck`, `npm.cmd run lint`, `npm.cmd run build` | Exit 0, không cảnh báo lint; chạy lại sau chỉnh giao diện cuối |
+| Tại root: dot-source `scripts/Use-Java21.ps1`, `backend/gradlew.bat -p backend --no-daemon clean build` | BUILD SUCCESSFUL, **16 test PostgreSQL/Testcontainers**: 5 identity, 5 menu, 5 bàn, 1 default schema; XML 0 failures/errors |
+| `backend/gradlew.bat -p backend --no-daemon test` sau cô lập timeout ngắn vào đúng test hết hạn | BUILD SUCCESSFUL, 16 test đạt lại; không rút timeout của các ca khác |
+| Test identity HTTP thật | Anonymous 401; đúng vai trò 200/sai vai trò 403; `/me` không lộ hash; sai thông tin/enabled=false bị chặn; BCrypt và seed không reset; thiếu CSRF/token cũ 403; session ID đổi khi login; phát lại cookie đã logout 401; hết hạn servlet thật rồi login lại |
+| `scripts/Initialize-Dev.ps1`, `scripts/dev.ps1 db`, `scripts/Start-Preview.ps1` | PostgreSQL demo giữ volume cũ, V3 + demo staff migration áp dụng; menu 6 món, bàn 30 vẫn giữ. Chạy lại Initialize đối chiếu SHA256 `.env` trước/sau giống hệt |
+| `Stop-Preview.ps1`, `backend/gradlew.bat -p backend --no-daemon bootJar`, `Start-Preview.ps1` sau chỉnh font cuối | Đóng gói jar cuối thành công, health UP; restart validate 6 migration, schema up to date, tài khoản cũ vẫn login được |
+| Trong frontend: `E2E_BASE_URL=http://127.0.0.1:8080`, `npm.cmd run test:e2e` trên jar cuối | **20/20 Chromium đạt**, 7 auth + 10 menu + 3 bàn; chạy cuối 18,2 giây. Hai BrowserContext tách biệt, API thật/role, cookie/logout replay, mất session, lỗi login/logout/CSRF; toàn bộ hồi quy menu/bàn |
+| Bố cục và kiểm tra ảnh | Login 768×1024, 1024×768, 375×812 không tràn; nút login ≥44px. Đã xem ảnh login tablet/mobile, nhân viên và bếp tại `.work/*-tablet.png`, `.work/login-mobile.png`; chỉnh font tiêu đề nội bộ cho dấu tiếng Việt |
+| Review diff và dữ liệu nhạy cảm | `git diff --check` đạt; không sửa migration cũ/giá/menu/bàn có sẵn, không có mutation đơn/tiền. So sánh secret thật trong `.env` với source (gồm file mới), frontend dist và preview logs: không thấy giá trị secret. `.env`, log/ảnh/test report/dependency/build đều bị Git ignore |
+
+Lỗi đã gặp và xử lý: sandbox chặn Gradle loopback/Docker nên chạy kiểm tra ngoài sandbox; jar preview cũ không còn file quản lý vẫn khóa jar Windows, đã xác minh command line đúng repository trước dừng; sửa generic overload của assert test và import extension TypeScript; test timeout ban đầu thất bại vì Tomcat làm tròn theo phút. Test cuối dùng listener chỉ rút phiên của đúng ca hết hạn xuống 2 giây, không bỏ qua filter/kiểm tra quyền. Không giảm assertion để bỏ lỗi nghiệp vụ.
+
+### Đang chạy / chưa kiểm chứng / bước tiếp
+
+- Preview cuối tại **http://127.0.0.1:8080/#login**, PostgreSQL demo còn chạy. Tài khoản `nhanvien`/`bep`; mật khẩu tương ứng là DEMO_STAFF_PASSWORD/DEMO_KITCHEN_PASSWORD trong `.env` root, không chép mật khẩu thật vào tài liệu. README có các bước thử hai cửa sổ riêng, gọi API trực tiếp, logout và đặt timeout 1 phút để thử tay.
+- Không còn phần triển khai 6.2 đang dở chặn nghiệm thu local. Người dùng xác nhận đã thử đăng nhập thành công và giao chốt; đây là bằng chứng thử tay đăng nhập, không thay thế các kiểm tra tự động về logout/CSRF/quyền/expiry. Đã rà lại code, báo cáo 16 test PostgreSQL và 20 test Chromium đạt, workflow Linux và diff trước lưu; kết quả push/CI sẽ ghi riêng theo SHA thực tế. Các run M1/menu phía dưới không phải bằng chứng CI của 6.2.
+- Chưa thử Safari/iPad thật, LAN/WAN/HTTPS, tải đồng thời tại quán hoặc timeout 30 phút bằng tay (tự động đã kiểm tra expiry thật với thời hạn ngắn). Giữ localhost, Secure=false chỉ demo HTTP local; chưa tuyên bố sẵn sàng dùng thật.
+- Quản trị/reset/thu hồi mọi phiên khi đổi tài khoản để 6.10. Sau khi chốt commit/push/CI, bước tiếp là **6.3 — danh sách bàn và mở phiên phục vụ**; không tự thực hiện trong 6.2.
+
+Các mục bên dưới là lịch sử trước 6.2; những câu “chưa có đăng nhập” áp dụng tại thời điểm ghi nhận đó.
 
 ## Push menu và kiểm chứng CI GitHub — 30/10/2026
 

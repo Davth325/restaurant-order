@@ -1,0 +1,23 @@
+export type Staff = { username: string; displayName: string; role: 'STAFF' | 'KITCHEN' }
+
+export async function api(path: string, options: RequestInit = {}) {
+  const timeout = AbortSignal.timeout(10000)
+  const signal = options.signal ? AbortSignal.any([options.signal, timeout]) : timeout
+  return fetch(path, { ...options, credentials: 'same-origin', cache: 'no-store', signal })
+}
+
+export async function authPost(path: string, body?: URLSearchParams) {
+  const response = await api('/api/auth/csrf')
+  if (!response.ok) throw new Error('Không kết nối được hệ thống quán. Vui lòng thử lại.')
+  const csrf: { token: string; headerName: string } = await response.json()
+  return api(path, { method: 'POST', headers: { [csrf.headerName]: csrf.token }, body })
+}
+
+export async function currentStaff(): Promise<Staff | null> {
+  const response = await api('/api/auth/me')
+  if (response.status === 401) return null
+  if (!response.ok) throw new Error('Chưa kiểm tra được phiên đăng nhập. Vui lòng thử lại.')
+  const staff: Staff = await response.json()
+  if (!staff.username || !staff.displayName || !['STAFF', 'KITCHEN'].includes(staff.role)) throw new Error('Phiên đăng nhập không hợp lệ.')
+  return staff
+}

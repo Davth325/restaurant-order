@@ -1,6 +1,6 @@
 # Kiểm thử và điều kiện nghiệm thu
 
-M1 đã có integration test PostgreSQL/Testcontainers và E2E Chromium cho schema, seed, API đọc bàn và UI/mất kết nối. Kết quả thực tế ở STATUS, cách chạy ở README. Các kịch bản nghiệp vụ bên dưới là yêu cầu cho những giai đoạn sau, chưa được coi là đã kiểm tra.
+Hiện có integration test PostgreSQL/Testcontainers và E2E Chromium cho schema, seed, menu/bàn và đăng nhập/phân quyền 6.2. Kết quả thực tế ở STATUS, cách chạy ở README. Các mục ghi “giai đoạn sau” cùng kịch bản gọi món/tiền/mạng chưa triển khai vẫn là yêu cầu, không được coi là đã kiểm tra.
 
 ## Kiểm tra bộ khung M1
 
@@ -17,6 +17,18 @@ M1 đã có integration test PostgreSQL/Testcontainers và E2E Chromium cho sche
 - Hồi quy review menu: giữ cảnh báo snapshot cũ trong lúc thử lại; ảnh lỗi phục hồi sau Làm mới cùng đường dẫn; một đường dẫn ảnh sai chỉ làm hiện placeholder của món đó, không gửi request ra ngoài vùng ảnh hoặc loại cả menu.
 - Bố cục kiểm tra ở 768 × 1024, 1024 × 768 và 375 × 812; không tràn ngang và vùng chạm bộ lọc ≥44px. Chưa thay thế kiểm tra iPad/Safari thật.
 - Thử local với database phát triển: đọc menu, restart jar rồi đọc lại; đối chiếu dữ liệu không bị seed reset. Lệnh, kết quả thực chạy và hạn chế duy trì ở STATUS.
+
+## Đăng nhập và quyền — 6.2
+
+- Integration PostgreSQL với HTTP/cookie thật (không mock user): menu public, anonymous 401, hai vai trò đúng API 200/sai API 403, URL ngoài danh sách bị từ chối; không lộ hash trong `/me`.
+- Sai username/mật khẩu, enabled=false đều không đăng nhập được; thông báo lỗi chung không lộ dữ liệu. BCrypt hash khớp mật khẩu test; Flyway chạy lại không reset hash/nhân đôi; default profile không seed tài khoản.
+- Login/logout thiếu CSRF hoặc dùng token trước login bị 403; login đổi session ID; logout xong phát lại chính cookie cũ vẫn 401.
+- Hết hạn thật ở servlet server → API 401 → login lại được. Test listener chỉ rút thời hạn phiên test xuống 2 giây vì Tomcat làm tròn cấu hình Boot theo phút; không thay filter/logic xác thực. Runtime vẫn timeout 30 phút mặc định.
+- Playwright dùng hai BrowserContext cách ly cho nhân viên/bếp, gọi thẳng API kiểm quyền, menu khi anonymous, vào sai trang, reload giữ login, logout cách ly và phát lại cookie cũ. Test mất session trên tab đang xem → không còn thẻ bàn → đăng nhập lại.
+- UI sai mật khẩu/xóa input, mạng lỗi login rồi phục hồi, mạng lỗi logout và thử lại; CSRF thiếu; login trên 768×1024, 1024×768 và 375×812. Hồi quy toàn bộ menu/bàn có quyền.
+- Tài khoản E2E đọc từ biến môi trường hoặc `.env` bị Git ignore; không dùng credential chung viết cứng. Không đưa báo cáo/trace local vào Git.
+- Thay đổi kỳ vọng mutation menu anonymous: trước Security là 405; nay không CSRF là 403. POST bàn của nhân viên có CSRF hợp lệ vẫn 405 vì chưa có API ghi.
+- Cách chạy và số test/kết quả thực tế ở README/STATUS. Chưa thay thế Safari/iPad thật, LAN/HTTPS và kiểm tra vận hành tại quán.
 
 ## Luồng chính (giai đoạn sau)
 

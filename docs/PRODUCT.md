@@ -10,6 +10,8 @@ Ngày 30/10/2026, chủ dự án yêu cầu menu mẫu từ database: nhóm món
 
 ## Mục tiêu demo
 
+Ngày 30/10/2026, bước 6.2 bổ sung đăng nhập tài khoản riêng cho nhân viên và bếp bằng Spring Security/PostgreSQL, mật khẩu băm, phân quyền ở API, đăng xuất và xử lý phiên hết hạn. Phạm vi triển khai và quyền hiện có ở DOMAIN; quản trị tài khoản để 6.10, mở phiên phục vụ để 6.3.
+
 Chứng minh một phiên ăn từ mở bàn tới thu tiền và dọn bàn, có nhiều đợt gọi món, nhiều màn hình cập nhật, không sai bàn/sai tiền/trùng đơn. Chứng minh khả năng làm việc nội bộ khi ngắt Internet theo kiến trúc được chọn.
 
 ## Vai trò đề xuất

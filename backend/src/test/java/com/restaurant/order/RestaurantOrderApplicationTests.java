@@ -15,7 +15,9 @@ import org.springframework.test.context.ActiveProfiles;
 import org.springframework.web.client.RestClient;
 
 @Import(TestcontainersConfiguration.class)
-@SpringBootTest(webEnvironment = SpringBootTest.WebEnvironment.RANDOM_PORT)
+@SpringBootTest(webEnvironment = SpringBootTest.WebEnvironment.RANDOM_PORT, properties = {
+        "DEMO_STAFF_PASSWORD=" + BrowserSession.STAFF_PASSWORD,
+        "DEMO_KITCHEN_PASSWORD=" + BrowserSession.KITCHEN_PASSWORD })
 @ActiveProfiles("demo")
 class RestaurantOrderApplicationTests {
 
@@ -26,7 +28,9 @@ class RestaurantOrderApplicationTests {
 	JdbcTemplate jdbc;
 
 	private RestClient client() {
-		return RestClient.create("http://127.0.0.1:" + port);
+		var session = new BrowserSession(port);
+		assertThat(session.login("nhanvien", BrowserSession.STAFF_PASSWORD)).isEqualTo(204);
+		return session.client;
 	}
 
 	@Test
@@ -41,7 +45,7 @@ class RestaurantOrderApplicationTests {
 		assertThat(response.getBody().tables().getLast().code()).isEqualTo("B30");
 		assertThat(response.getBody().observedAt()).isNotNull();
 		assertThat(jdbc.queryForObject("SELECT count(*) FROM flyway_schema_history WHERE success", Integer.class))
-				.isEqualTo(4);
+				.isEqualTo(6);
 	}
 
 	@Test
@@ -73,7 +77,12 @@ class RestaurantOrderApplicationTests {
 
 	@Test
 	void unsupportedMutationIsRejected() {
-		var status = client().post().uri("/api/tables").exchange((request, response) -> response.getStatusCode().value());
+		var session = new BrowserSession(port);
+		assertThat(session.login("nhanvien", BrowserSession.STAFF_PASSWORD)).isEqualTo(204);
+		var csrf = session.csrf();
+		var status = session.client.post().uri("/api/tables")
+				.header(csrf.get("headerName").toString(), csrf.get("token").toString())
+				.exchange((request, response) -> response.getStatusCode().value());
 		assertThat(status).isEqualTo(405);
 	}
 

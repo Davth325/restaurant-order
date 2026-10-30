@@ -17,7 +17,9 @@ import org.springframework.test.context.ActiveProfiles;
 import org.springframework.web.client.RestClient;
 
 @Import(TestcontainersConfiguration.class)
-@SpringBootTest(webEnvironment = SpringBootTest.WebEnvironment.RANDOM_PORT)
+@SpringBootTest(webEnvironment = SpringBootTest.WebEnvironment.RANDOM_PORT, properties = {
+        "DEMO_STAFF_PASSWORD=" + BrowserSession.STAFF_PASSWORD,
+        "DEMO_KITCHEN_PASSWORD=" + BrowserSession.KITCHEN_PASSWORD })
 @ActiveProfiles("demo")
 class MenuIntegrationTests {
     @LocalServerPort
@@ -99,7 +101,7 @@ class MenuIntegrationTests {
     @Test
     void rejectsWritesAndReturnsSanitized503WhenMenuCannotBeRead() {
         var status = client().post().uri("/api/menu").exchange((request, response) -> response.getStatusCode().value());
-        assertThat(status).isEqualTo(405);
+        assertThat(status).isEqualTo(403); // CSRF rejects anonymous mutations before MVC.
         try {
             // Simulate an unreadable relation only in the isolated test database.
             jdbc.execute("ALTER TABLE menu_item RENAME TO menu_item_unavailable");

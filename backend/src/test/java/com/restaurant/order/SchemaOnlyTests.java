@@ -21,7 +21,8 @@ class SchemaOnlyTests {
         assertThat(jdbc.queryForObject("SELECT count(*) FROM restaurant_table", Integer.class)).isZero();
         assertThat(jdbc.queryForObject("SELECT count(*) FROM menu_category", Integer.class)).isZero();
         assertThat(jdbc.queryForObject("SELECT count(*) FROM menu_item", Integer.class)).isZero();
+        assertThat(jdbc.queryForObject("SELECT count(*) FROM staff_user", Integer.class)).isZero();
         assertThat(jdbc.queryForObject("SELECT count(*) FROM flyway_schema_history WHERE success", Integer.class))
-                .isEqualTo(2);
+                .isEqualTo(3);
     }
 }

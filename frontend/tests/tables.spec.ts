@@ -1,7 +1,10 @@
 import { expect, test } from '@playwright/test'
+import { loginApi } from './auth-helpers.js'
 
-test('reads real PostgreSQL tables through the backend and filters by area', async ({ page, request }) => {
-  const response = await request.get('/api/tables')
+test.beforeEach(async ({ context }) => { await loginApi(context.request) })
+
+test('reads real PostgreSQL tables through the backend and filters by area', async ({ page, context }) => {
+  const response = await context.request.get('/api/tables')
   expect(response.ok()).toBeTruthy()
   const snapshot = await response.json()
   expect(snapshot.total).toBe(30)

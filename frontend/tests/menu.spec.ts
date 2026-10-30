@@ -1,4 +1,5 @@
 import { expect, test } from '@playwright/test'
+import { loginUi } from './auth-helpers.js'
 
 type Item = { id: number; name: string; priceVnd: number; imagePath: string; available: boolean }
 type Snapshot = { categories: { id: number; name: string; items: Item[] }[]; total: number; observedAt: string }
@@ -31,6 +32,8 @@ test('reads database menu, prices, images and availability; reload and navigatio
   await page.reload()
   await expect(page.getByTestId('menu-item')).toHaveCount(snapshot.total)
   await page.getByRole('link', { name: 'Sơ đồ bàn', exact: true }).click()
+  await expect(page.getByRole('heading', { name: 'Đăng nhập', exact: true })).toBeVisible()
+  await loginUi(page, 'STAFF')
   await expect(page.getByTestId('table-card')).toHaveCount(30)
   await page.getByRole('link', { name: 'Thực đơn', exact: true }).click()
   await expect(page.getByTestId('menu-item')).toHaveCount(snapshot.total)

@@ -26,6 +26,16 @@ Stack đã xác nhận: Java Spring Boot + Gradle, React + TypeScript, PostgreSQ
 
 ## Cách triển khai
 
+### Đăng nhập đã triển khai — 6.2
+
+- Thêm starter Spring Security do BOM Spring Boot hiện có quản lý phiên bản; không nâng stack. Module `identity` dùng `UserDetailsService` đọc PostgreSQL qua JDBC, BCrypt cost 12; `V3__create_staff_users.sql` thêm schema, không sửa V1/V2.
+- Bean Java migration Flyway `R__demo_staff` chỉ profile demo; chạy cùng transaction migration, dùng prepared statement và BCrypt từ mật khẩu môi trường. Checksum phiên bản seed cố định, không phụ thuộc secret; `ON CONFLICT DO NOTHING` bảo toàn tài khoản đã có. `.env`/mật khẩu không vào source hay lịch sử Flyway. Boot tự đăng ký JavaMigration bean: [tài liệu chính thức](https://docs.spring.io/spring-boot/how-to/data-initialization.html).
+- Spring Security form authentication xử lý `POST /api/auth/login` (form URL-encoded) → 204 hoặc lỗi JSON 401 chung; `GET /api/auth/me` chỉ trả username/displayName/role. Không HTTP Basic/JWT hoặc lưu credential vào localStorage. Request cache tắt, không redirect lỗi API thành HTML đăng nhập.
+- Session mặc định của servlet lưu trong RAM server, đổi session ID khi login; cookie `JSESSIONID` HttpOnly, SameSite Strict, cookie-only (không URL rewriting). Logout POST `/api/auth/logout` hủy session và xóa cookie. Timeout 30 phút không có request dùng phiên; `STAFF_SESSION_TIMEOUT` có thể cấu hình theo phút (Tomcat làm tròn tối thiểu 1 phút). Không polling giữ phiên sống vô hạn. Restart mất session, tài khoản giữ ở PostgreSQL.
+- Giữ CSRF mặc định Spring Security trên mọi mutation, kể cả login/logout. `GET /api/auth/csrf` công khai, no-store, trả masked token và tên header; SPA lấy token mới trước mỗi POST, gửi cùng cookie. Token cũ bị xóa khi login/logout. Không bật CORS; jar cùng origin, Vite tiếp tục proxy `/api`. [Spring Security CSRF](https://docs.spring.io/spring-security/reference/servlet/exploits/csrf.html).
+- GET menu/health/tài nguyên UI công khai; `/api/tables` và `/api/staff/**` chỉ STAFF, `/api/kitchen/**` chỉ KITCHEN; `/api/auth/me` cần đăng nhập; mọi đường dẫn khác mặc định từ chối. API nội bộ trả 401 khi chưa có phiên, 403 khi sai quyền hoặc CSRF không hợp lệ. API hiện có vẫn không cho ghi menu/bàn; mutation không CSRF bị chặn trước MVC.
+- Bind localhost giữ nguyên. `SESSION_COOKIE_SECURE=false` chỉ để HTTP localhost demo; phải bật true và chuẩn bị HTTPS tin cậy trước LAN/dùng thật. Đây chưa phải xác nhận sẵn sàng vận hành tại quán. Quản trị tài khoản, đổi quyền/thu hồi mọi phiên để 6.10.
+
 Một ứng dụng Spring Boot chia module nghiệp vụ và một PostgreSQL tại quán. Frontend React build thành tài nguyên phục vụ cùng địa chỉ với API, qua Spring Boot hoặc reverse proxy local. Trong phát triển, Vite dùng proxy tới backend. Không cần microservices, Kafka, Kubernetes hoặc Redis cho demo này.
 
 Máy chủ và database là nguồn dữ liệu chính. Internet phục vụ phát triển, GitHub, cập nhật, sao lưu ngoài quán tùy chọn và ngân hàng; không nằm trên đường bắt buộc của gửi món → bếp → thu tiền mặt.

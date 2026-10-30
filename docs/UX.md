@@ -8,6 +8,14 @@ Nút và bộ lọc có vùng chạm ít nhất 44px; lưới thích ứng table
 
 Sau review: cảnh báo snapshot cũ được giữ trong lúc thử lại, chỉ bỏ khi đọc thành công. Làm mới thành công cũng thử tải lại ảnh từng lỗi dù đường dẫn không đổi. Đường dẫn ảnh không hợp lệ chỉ hiện placeholder cho món đó và không được request, không làm mất cả thực đơn.
 
+## Đăng nhập nội bộ đã triển khai — 6.2
+
+- Menu tiếp tục mở công khai ở `/#menu`. Liên kết Đăng nhập nội bộ mở `/#login`; truy cập sơ đồ bàn/bếp khi chưa đăng nhập cũng mở form, không hiển thị snapshot nội bộ cũ.
+- Form có tên đăng nhập, mật khẩu, trạng thái đang gửi, thông báo sai thông tin chung và lỗi mạng; mật khẩu được xóa khỏi state/input sau mỗi lượt gửi. Hỗ trợ password manager, bàn phím và nhãn trường rõ; không ghi nhớ credential trong storage của ứng dụng.
+- Thành công tự vào `/#tables` cho nhân viên hoặc `/#kitchen` cho bếp. Sidebar hiển thị tên/vai trò; đi nhầm màn hình có thông báo Không có quyền truy cập và đường về khu vực của mình. Bếp chưa có hàng đợi ở bước này, lời nhắn thể hiện đúng phạm vi.
+- Logout thành công đưa về form. Nếu mất mạng, giữ thông báo chưa xác nhận đăng xuất và cho thử lại. Phiên bị thu hồi/hết hạn nhận 401/403 thì gỡ màn hình nội bộ và đề nghị đăng nhập lại; kiểm tra phiên khi quay lại tab. Không suy phiên đã hết chỉ từ lỗi mạng.
+- Các màn hình gọi món/mở phiên/bếp phía dưới vẫn là đề xuất giai đoạn sau, không phải chức năng đã có.
+
 ## Khách trên tablet
 
 - Luôn hiển thị bàn hiện tại và trạng thái kết nối tới hệ thống quán.

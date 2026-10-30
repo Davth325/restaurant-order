@@ -17,7 +17,7 @@ const statusLabels = {
   NEEDS_CLEANING: 'Chờ dọn',
 }
 
-function TablesPage() {
+function TablesPage({ onUnauthorized }: { onUnauthorized: () => void }) {
   const [snapshot, setSnapshot] = useState<Snapshot | null>(null)
   const [area, setArea] = useState('Tất cả')
   const [loading, setLoading] = useState(true)
@@ -31,6 +31,10 @@ function TablesPage() {
     const timeout = window.setTimeout(() => controller.abort(), 10000)
     return fetch('/api/tables', { signal: controller.signal, cache: 'no-store' })
       .then(response => {
+        if (response.status === 401 || response.status === 403) {
+          if (activeRequest.current === controller) onUnauthorized()
+          throw new Error('Unauthorized')
+        }
         if (!response.ok) throw new Error('API unavailable')
         return response.json() as Promise<Snapshot>
       })
@@ -47,7 +51,7 @@ function TablesPage() {
         window.clearTimeout(timeout)
         if (activeRequest.current === controller) setLoading(false)
       })
-  }, [])
+  }, [onUnauthorized])
 
   useEffect(() => {
     void loadTables()

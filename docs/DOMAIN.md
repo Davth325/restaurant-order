@@ -2,6 +2,15 @@
 
 Các quy tắc dưới đây là thiết kế đề xuất cho bản đầu, trừ những yêu cầu được đánh dấu xác nhận trong PRODUCT.
 
+## Đăng nhập nhân viên/bếp đã triển khai — bước 6.2
+
+- StaffUser định danh bằng username duy nhất, tên hiển thị, mật khẩu băm BCrypt, vai trò `STAFF` hoặc `KITCHEN`, cờ enabled. Backend lấy quyền từ tài khoản PostgreSQL; frontend không tự cấp quyền.
+- `STAFF` được xem danh sách bàn; `KITCHEN` được vào khu vực bếp riêng. Hai vai trò không tự có quyền của nhau. Menu chỉ đọc công khai để giữ luồng xem menu hiện tại, chưa gắn quyền khách với phiên bàn. Chưa có quyền thu tiền/hủy/giảm hoặc quản lý tài khoản; không tạo vai trò quản lý chưa dùng.
+- Demo có hai tài khoản tổng hợp `nhanvien` và `bep`, mật khẩu riêng sinh trong `.env` local. Flyway seed chỉ profile demo, không reset hash/tên/quyền/enabled đã tồn tại; profile mặc định không tạo tài khoản mẫu. Đổi `.env` sau seed không đổi mật khẩu đã lưu; quản trị/reset để 6.10.
+- Sau đăng nhập, nhân viên vào sơ đồ bàn, bếp vào màn hình bếp. Màn hình bếp mới là điểm vào có kiểm tra quyền, chưa có hàng đợi hoặc thao tác món. Danh sách bàn vẫn chỉ đọc; mở phiên là 6.3.
+- Phiên phía server có thời hạn 30 phút không có request sử dụng phiên; đăng xuất thu hồi ngay, restart server buộc đăng nhập lại nhưng giữ tài khoản. Kiểm tra lại khi quay lại tab và khi gọi API; UI bỏ dữ liệu nội bộ nếu nhận 401/403, yêu cầu đăng nhập lại. Chưa có quản trị thu hồi mọi phiên/đổi quyền giữa ca; thuộc 6.10.
+- Đăng nhập sai dùng thông báo chung cho tài khoản không tồn tại, sai mật khẩu và tài khoản bị khóa; không phản hồi mật khẩu/hash. Mất kết nối khi đăng xuất phải báo chưa xác nhận được và cho thử lại.
+
 ## Menu mẫu đã triển khai — 30/10/2026
 
 - MenuCategory gồm mã duy nhất, tên và thứ tự; MenuItem thuộc một nhóm, có mã duy nhất, tên, giá VND nguyên đồng, đường dẫn ảnh local, cờ còn bán và thứ tự.
