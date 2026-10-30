@@ -14,6 +14,16 @@ Stack đã xác nhận: Java Spring Boot + Gradle, React + TypeScript, PostgreSQ
 
 Đây là schema/API hiện có, không phải tuyên bố các module nghiệp vụ trong thiết kế bên dưới đã hoàn thành.
 
+## Lát cắt menu đã triển khai — 30/10/2026
+
+- Module `menu`: entity/repository/service/controller, DTO `MenuSnapshot`; `GET /api/menu` trả `{categories: [{id, name, items: [{id, name, priceVnd, imagePath, available}]}], total, observedAt}`. `total` đếm mọi món, gồm hết món. Response no-store; lỗi database dùng chung handler HTTP 503, không lộ cấu hình. Không có API ghi.
+- Flyway **V2** thêm `menu_category`, `menu_item`, khóa ngoại, mã duy nhất, giá nguyên đồng không âm và giới hạn số nguyên JSON an toàn; không sửa V1. `R__demo_menu.sql` chỉ chạy profile demo, `ON CONFLICT DO NOTHING` để bảo toàn dữ liệu đang có.
+- Service đọc nhóm và món bằng hai query trong transaction read-only `REPEATABLE_READ`, giữ cùng snapshot khi database có thay đổi đồng thời. Không lấy entity JPA trực tiếp làm response.
+- React mở mặc định menu tại `/` hoặc `/#menu`; sơ đồ bàn giữ tại `/#tables`. Menu không phụ thuộc API bàn. Frontend xác thực response cơ bản, fetch timeout 10 giây, tải lại thủ công và cảnh báo snapshot cũ.
+- Ảnh mẫu nằm ở `frontend/public/menu-images/*.svg`, đường dẫn lấy từ database; Vite và jar đều phục vụ cùng origin. Không gọi CDN/dịch vụ ảnh, không nâng dependency. Lỗi từng ảnh có placeholder riêng.
+- Sau review, frontend chỉ request ảnh có tên file local hợp lệ trong `/menu-images/`; đường dẫn ảnh sai được xử lý riêng ở thẻ món, không loại cả snapshot. Mỗi lần nhận menu thành công tạo lượt tải ảnh mới để thử lại ảnh từng lỗi. Cảnh báo snapshot cũ chỉ được xóa sau request thành công.
+- Giữ bind localhost và giới hạn demo chỉ đọc như M1. Không bổ sung quyền/phiên/gửi món trong lát cắt này.
+
 ## Cách triển khai
 
 Một ứng dụng Spring Boot chia module nghiệp vụ và một PostgreSQL tại quán. Frontend React build thành tài nguyên phục vụ cùng địa chỉ với API, qua Spring Boot hoặc reverse proxy local. Trong phát triển, Vite dùng proxy tới backend. Không cần microservices, Kafka, Kubernetes hoặc Redis cho demo này.

@@ -5,7 +5,7 @@ test('reads real PostgreSQL tables through the backend and filters by area', asy
   expect(response.ok()).toBeTruthy()
   const snapshot = await response.json()
   expect(snapshot.total).toBe(30)
-  await page.goto('/')
+  await page.goto('/#tables')
   await expect(page.getByRole('heading', { name: 'Không gian phục vụ' })).toBeVisible()
   await expect(page.getByTestId('table-card')).toHaveCount(snapshot.total)
   await expect(page.getByText(snapshot.tables[0].displayName, { exact: true })).toBeVisible()
@@ -17,7 +17,7 @@ test('reads real PostgreSQL tables through the backend and filters by area', asy
 
 test('shows a connection error and recovers without displaying fake tables', async ({ page }) => {
   await page.route('**/api/tables', route => route.abort())
-  await page.goto('/')
+  await page.goto('/#tables')
   await expect(page.getByRole('alert')).toContainText('Chưa kết nối được hệ thống quán')
   await expect(page.getByTestId('table-card')).toHaveCount(0)
   await page.unroute('**/api/tables')
@@ -30,7 +30,7 @@ test('shows a connection error and recovers without displaying fake tables', asy
 
 test('fits a tablet viewport without horizontal overflow', async ({ page }) => {
   await page.setViewportSize({ width: 768, height: 1024 })
-  await page.goto('/')
+  await page.goto('/#tables')
   await expect(page.getByTestId('table-card')).toHaveCount(30)
   expect(await page.evaluate(() => document.documentElement.scrollWidth <= window.innerWidth)).toBeTruthy()
 })

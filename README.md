@@ -1,6 +1,6 @@
 # Ứng dụng gọi món nhà hàng
 
-Bộ khung M1: Java 21 + Spring Boot + Gradle Wrapper, React + TypeScript + Vite, PostgreSQL + Flyway. Giao diện đọc **30 bàn demo từ database thật**, có lọc khu vực, tải lại và thông báo khi mất kết nối. Chưa có đăng nhập, phiên bàn, gọi món, bếp hoặc thu tiền.
+Bộ khung M1 và menu mẫu: Java 21 + Spring Boot + Gradle Wrapper, React + TypeScript + Vite, PostgreSQL + Flyway. Giao diện đọc **menu và 30 bàn demo từ database thật**, có bộ lọc, tải lại và thông báo khi mất kết nối. Chưa có đăng nhập, phiên bàn, gọi món, bếp hoặc thu tiền.
 
 Phạm vi sản phẩm giữ nguyên: demo 30 bàn, một bếp, QR do nhân viên kiểm tra và xác nhận. Kiến trúc máy chủ tại quán chạy qua LAN khi mất Internet vẫn là đề xuất; chưa kiểm chứng vận hành tại quán. [Phạm vi](docs/PRODUCT.md) · [Quyết định](docs/DECISIONS.md) · [Trạng thái thực tế](docs/STATUS.md).
 
@@ -29,7 +29,9 @@ Chạy lần lượt tại **thư mục gốc**:
 - `build` chạy `npm ci`, lint, TypeScript/Vite build, rồi Gradle `clean build`, gồm integration test với PostgreSQL/Testcontainers riêng. Docker Engine cần hoạt động.
 - Start-Preview chạy jar ở nền, không mở cửa sổ terminal mới và đợi health UP.
 
-Mở [ứng dụng](http://127.0.0.1:8080), [API danh sách bàn](http://127.0.0.1:8080/api/tables) và [health](http://127.0.0.1:8080/actuator/health). Giao diện phải có B01–B30; chọn Khu A/B còn 15 bàn. Số bàn đến từ API, không có mảng 30 bàn giả trong frontend.
+Mở [ứng dụng](http://127.0.0.1:8080), [API menu](http://127.0.0.1:8080/api/menu), [API danh sách bàn](http://127.0.0.1:8080/api/tables) và [health](http://127.0.0.1:8080/actuator/health). Trang chủ hiển thị 6 món thuộc Khai vị/Món chính/Đồ uống, ảnh minh họa local, giá VND và Còn bán/Hết món (Bún chả Hà Nội mẫu hết món). Chọn nhóm để lọc; F5 vẫn thấy menu từ database. Chọn **Sơ đồ bàn** để xem B01–B30; chọn Khu A/B còn 15 bàn. Frontend không có danh sách món/bàn viết cứng.
+
+Tự thử lỗi menu: mở DevTools → Network, bật Offline rồi bấm **Làm mới**; phải thấy lỗi và cảnh báo dữ liệu cũ. F5 lúc Offline không tải được trang là hành vi trình duyệt bình thường; kiểm tra lỗi tải đầu bằng chặn `/api/menu` rồi reload. Bỏ Offline/chặn request, bấm **Tải lại thực đơn** để phục hồi. Menu rỗng và lỗi ảnh có kịch bản tự động trong `frontend/tests/menu.spec.ts`, không cần xóa dữ liệu demo để thử.
 
 Log preview: `.work/preview.log`, `.work/preview.err.log`. Process của preview được lưu ở `.work/preview-process.json`; Stop-Preview đối chiếu PID và thời điểm khởi động trước khi dừng.
 
@@ -105,13 +107,14 @@ Pop-Location
 
 ## Cấu trúc và dữ liệu
 
-- `backend/`: package `com.restaurant.order`, API chỉ đọc `GET /api/tables`, health kiểm tra kết nối database. Lỗi truy cập dữ liệu trả HTTP 503 với thông báo chung, không trả credential/stack trace.
+- `backend/`: package `com.restaurant.order`, API chỉ đọc `GET /api/menu`, `GET /api/tables`, health kiểm tra kết nối database. Lỗi truy cập dữ liệu trả HTTP 503 với thông báo chung, không trả credential/stack trace.
 - `frontend/`: UI tiếng Việt, font/ảnh biểu tượng local, không cần CDN. Dữ liệu cũ khi tải lại thất bại được đánh dấu có thể đã thay đổi; lần tải đầu lỗi không hiện bàn giả.
 - `infra/compose.yaml`: PostgreSQL khóa phiên bản/digest, volume bền vững và healthcheck.
 - `backend/src/main/resources/db/migration/V1__create_restaurant_tables.sql`: schema do Flyway quản lý; Hibernate chỉ validate.
 - `backend/src/main/resources/db/demo/R__demo_tables.sql`: seed B01–B30, hai khu, 4 chỗ/bàn; chỉ chạy với profile `demo` trong `.env` local. Profile mặc định tạo schema, không seed. Chạy lại không reset trạng thái bàn đã có.
+- `backend/src/main/resources/db/migration/V2__create_menu.sql`: schema nhóm/món; `db/demo/R__demo_menu.sql` thêm menu mẫu chỉ profile demo, không ghi đè bản ghi đã tồn tại. Ảnh SVG trong `frontend/public/menu-images/`, đường dẫn lưu trong database. API đọc mọi món kể cả hết món, không có chức năng sửa/gửi món.
 - `scripts/`: lệnh Windows; `.github/workflows/ci.yml`: cấu hình build/test trên GitHub; kết quả chạy thực tế ghi trong STATUS.
 
 Repository: [Davth325/restaurant-order](https://github.com/Davth325/restaurant-order), nhánh `main`. Tag `v0.1.0-m1` dùng để đánh dấu bộ khung M1 đầu tiên. Không commit `.env`, dependency đã cài, log hay dữ liệu PostgreSQL. Kết quả lưu phiên bản và kiểm tra GitHub ở [STATUS](docs/STATUS.md).
 
-Tài liệu nghiệp vụ: [DOMAIN](docs/DOMAIN.md), [TESTING](docs/TESTING.md), [ARCHITECTURE](docs/ARCHITECTURE.md), [OPERATIONS](docs/OPERATIONS.md). Kế hoạch [M1](docs/tasks/M1-SCAFFOLD.md); bước tiếp sau M1 là chốt luật phiên/quyền và làm lát cắt M2.
+Tài liệu nghiệp vụ: [DOMAIN](docs/DOMAIN.md), [TESTING](docs/TESTING.md), [ARCHITECTURE](docs/ARCHITECTURE.md), [OPERATIONS](docs/OPERATIONS.md). Kế hoạch [M1](docs/tasks/M1-SCAFFOLD.md); menu mẫu là lát cắt chỉ đọc riêng, chưa hoàn thành M2. Sau khi người dùng thử menu ổn và review, bước tiếp là đăng nhập nhân viên/bếp; phiên/gửi món được giao riêng sau đó.

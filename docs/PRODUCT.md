@@ -6,6 +6,8 @@ Demo trước rồi triển khai thực tế; 30 bàn, một khu bếp; khách d
 
 Khi giao thực hiện M1 ngày 29/10/2026, chủ dự án xác nhận thêm Java 21 và Vite; môi trường PostgreSQL phát triển dùng Docker Desktop + Compose. Bộ khung M1 chưa thay đổi phạm vi nghiệp vụ đề xuất dưới đây.
 
+Ngày 30/10/2026, chủ dự án yêu cầu menu mẫu từ database: nhóm món, tên, giá, ảnh, còn bán/hết món; API và UI tablet có tải/rỗng/lỗi, tải lại trang vẫn đọc được. Phạm vi này chỉ xem menu; chưa chốt menu thật, giỏ hàng, gửi món, tùy chọn, buffet/combo/cân hoặc thuế/phí. Mặc định triển khai mẫu: giá VND nguyên đồng theo món, ảnh minh họa local; chi tiết ở DOMAIN.
+
 ## Mục tiêu demo
 
 Chứng minh một phiên ăn từ mở bàn tới thu tiền và dọn bàn, có nhiều đợt gọi món, nhiều màn hình cập nhật, không sai bàn/sai tiền/trùng đơn. Chứng minh khả năng làm việc nội bộ khi ngắt Internet theo kiến trúc được chọn.

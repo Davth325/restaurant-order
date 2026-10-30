@@ -20,6 +20,7 @@
 | D016 | Đã xác nhận | Docker Desktop + Compose cho PostgreSQL trên máy phát triển | Chủ dự án chọn ngày 29/10/2026 để dựng database lặp lại được; chưa quyết định Docker/native cho máy tại quán. |
 | D017 | Đã triển khai trong M1 | Spring Boot 4.1.2, Gradle Wrapper 9.8.2, PostgreSQL 18.6 và dependency frontend khóa phiên bản | Codex chọn kỹ thuật trong phạm vi M1 ngày 29/10/2026, dùng Initializr chính thức và build/smoke test thực tế; bảng phiên bản ở DEVELOPMENT. Wrapper có SHA-256; image PostgreSQL có digest. |
 | D018 | Đã triển khai trong M1 | API bàn chỉ đọc, bind localhost; seed tách profile demo; UI trong jar khi đóng gói | Có lát cắt UI → API → PostgreSQL mà chưa cấp quyền phiên giả. Giữ Vite proxy cho phát triển; trước mở LAN phải có phân quyền M2. |
+| D019 | Đã triển khai menu mẫu — 30/10/2026 | Menu từ PostgreSQL qua API chỉ đọc; seed riêng demo, ảnh SVG local, giá mẫu VND nguyên đồng; trang chủ mở menu | Theo yêu cầu menu mẫu của chủ dự án. Codex chọn mặc định kỹ thuật để thử xuyên suốt UI/API/database và không cần dịch vụ ảnh ngoài; không chốt menu thật, thuế/phí, option hoặc quyền gửi món. Chi tiết nghiệp vụ ở DOMAIN, kỹ thuật ở ARCHITECTURE. |
 
 Khi thay đổi: thêm ngày, người chốt, lý do, phần bị ảnh hưởng, quyết định cũ được thay thế. Không biến đề xuất thành “đã xác nhận” chỉ vì Codex đã bắt đầu code.
 

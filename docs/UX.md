@@ -1,5 +1,13 @@
 # Màn hình và tương tác
 
+## Menu mẫu hiện có — 30/10/2026
+
+Mở trang chủ thấy “Thực đơn hôm nay”; điều hướng “Thực đơn” / “Sơ đồ bàn” hoạt động cả trên màn hình nhỏ. Nhóm lọc lấy từ API, mỗi thẻ hiển thị ảnh minh họa, tên, giá VND và chữ Còn bán/Hết món. Chưa có phiên bàn nên không hiển thị một bàn khách giả hoặc nút thêm/gửi chưa hoạt động.
+
+Nút và bộ lọc có vùng chạm ít nhất 44px; lưới thích ứng tablet dọc/ngang. Khi đang tải có thông báo và khóa Làm mới; menu trống có lời nhắn riêng; mất kết nối có nút thử lại. Nếu giữ snapshot cũ sau lỗi, cảnh báo rõ giá/tình trạng có thể đã thay đổi. Lỗi ảnh chỉ thay ảnh bằng placeholder, giữ tên/giá. Những màn hình khách/nhân viên/bếp bên dưới vẫn là thiết kế đề xuất.
+
+Sau review: cảnh báo snapshot cũ được giữ trong lúc thử lại, chỉ bỏ khi đọc thành công. Làm mới thành công cũng thử tải lại ảnh từng lỗi dù đường dẫn không đổi. Đường dẫn ảnh không hợp lệ chỉ hiện placeholder cho món đó và không được request, không làm mất cả thực đơn.
+
 ## Khách trên tablet
 
 - Luôn hiển thị bàn hiện tại và trạng thái kết nối tới hệ thống quán.

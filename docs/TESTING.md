@@ -10,7 +10,15 @@ M1 đã có integration test PostgreSQL/Testcontainers và E2E Chromium cho sche
 - Trình duyệt tải dữ liệu thật, lọc khu vực, hiển thị lỗi mạng và tải lại phục hồi, đánh dấu dữ liệu cũ; bố cục tablet 768 × 1024 không tràn ngang.
 - Thử vận hành local riêng: dừng database → API 503; tạo lại container với cùng volume → marker kiểm tra còn, dọn marker → API trở lại 30 bàn. Không phải thử mất WAN toàn quán.
 
-## Luồng chính
+## Kiểm tra menu mẫu
+
+- PostgreSQL/Testcontainers: V2 và seed demo, default không seed nhóm/món, thứ tự API/no-store, giá nguyên đồng và món hết; sửa database rồi đọc lại nhiều lần; seed không ghi đè/nhân đôi; menu không có món; từ chối giá không hợp lệ/khóa ngoại sai; POST 405; lỗi đọc database trả 503 không lộ chi tiết.
+- Chromium với API thật: đối chiếu nhóm/tên/giá/ảnh/tình trạng, reload trang và đổi menu ↔ bàn. Chặn request để kiểm tra loading/rỗng, lỗi mạng/HTTP, thử lại, cảnh báo snapshot cũ, response sai và ảnh lỗi.
+- Hồi quy review menu: giữ cảnh báo snapshot cũ trong lúc thử lại; ảnh lỗi phục hồi sau Làm mới cùng đường dẫn; một đường dẫn ảnh sai chỉ làm hiện placeholder của món đó, không gửi request ra ngoài vùng ảnh hoặc loại cả menu.
+- Bố cục kiểm tra ở 768 × 1024, 1024 × 768 và 375 × 812; không tràn ngang và vùng chạm bộ lọc ≥44px. Chưa thay thế kiểm tra iPad/Safari thật.
+- Thử local với database phát triển: đọc menu, restart jar rồi đọc lại; đối chiếu dữ liệu không bị seed reset. Lệnh, kết quả thực chạy và hạn chế duy trì ở STATUS.
+
+## Luồng chính (giai đoạn sau)
 
 1. Mở B01 → gắn tablet → gửi 2 món → bếp làm → nhân viên mang → gọi thêm → chốt bill → thu tiền → đóng → dọn → mở lượt mới.
 2. Thực hiện tương tự ở B02 đồng thời; không nhầm dữ liệu giữa hai bàn.

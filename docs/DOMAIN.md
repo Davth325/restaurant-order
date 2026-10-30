@@ -2,6 +2,15 @@
 
 Các quy tắc dưới đây là thiết kế đề xuất cho bản đầu, trừ những yêu cầu được đánh dấu xác nhận trong PRODUCT.
 
+## Menu mẫu đã triển khai — 30/10/2026
+
+- MenuCategory gồm mã duy nhất, tên và thứ tự; MenuItem thuộc một nhóm, có mã duy nhất, tên, giá VND nguyên đồng, đường dẫn ảnh local, cờ còn bán và thứ tự.
+- Giá mẫu lưu `BIGINT`/Java `long`, không âm; giới hạn tới 9.007.199.254.740.991 đồng để JSON number được JavaScript biểu diễn chính xác. Đây là giới hạn kỹ thuật, không phải mức giá áp dụng thực tế; chưa tính thuế/phí hoặc bill.
+- Món hết vẫn xuất hiện với nhãn “Hết món”. Nhóm/món sắp theo thứ tự cấu hình, rồi ID. Nhóm trống được trả về; menu không có món là kết quả hợp lệ.
+- Seed chỉ profile `demo`, tạo mẫu tổng hợp; chạy lại bỏ qua mã đã tồn tại, không ghi đè giá/tên/trạng thái đã sửa. Ảnh SVG minh họa đóng gói local, đường dẫn được lưu trong database.
+- UI đọc lại API khi mở/tải lại trang, vào lại mục thực đơn hoặc bấm Làm mới. Không tạo danh sách món giả khi lỗi; snapshot cũ phải có cảnh báo giá/tình trạng có thể đã đổi. Chưa tự cập nhật realtime.
+- API chỉ đọc; chưa có quản trị menu hoặc gửi món. Các luật kiểm tra giá/khả năng bán lúc gửi bên dưới vẫn thuộc giai đoạn gọi món.
+
 ## Thuật ngữ
 
 - RestaurantTable: bàn vật lý, chẳng hạn B01. Không phải tài khoản khách dùng chung mãi mãi.

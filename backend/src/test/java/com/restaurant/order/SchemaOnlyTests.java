@@ -19,7 +19,9 @@ class SchemaOnlyTests {
     @Test
     void defaultProfileMigratesSchemaWithoutDemoData() {
         assertThat(jdbc.queryForObject("SELECT count(*) FROM restaurant_table", Integer.class)).isZero();
+        assertThat(jdbc.queryForObject("SELECT count(*) FROM menu_category", Integer.class)).isZero();
+        assertThat(jdbc.queryForObject("SELECT count(*) FROM menu_item", Integer.class)).isZero();
         assertThat(jdbc.queryForObject("SELECT count(*) FROM flyway_schema_history WHERE success", Integer.class))
-                .isEqualTo(1);
+                .isEqualTo(2);
     }
 }

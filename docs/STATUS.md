@@ -1,6 +1,60 @@
 # Trạng thái hiện tại
 
-Cập nhật: 30/10/2026 — đã khởi động lại môi trường, lưu bộ khung đầu tiên lên GitHub và kiểm chứng CI Linux thành công.
+Cập nhật: 30/10/2026 — người dùng đã thử menu và xác nhận hoạt động ổn; đã review, sửa lỗi phục hồi và kiểm tra lại. Bước tiếp theo: đăng nhập nhân viên/bếp. Bằng chứng M1/GitHub cũ bên dưới không đại diện cho thay đổi menu chưa push.
+
+## Review và bàn giao menu — 30/10/2026
+
+- **Hoàn thành:** menu mẫu database → API → UI đã được người dùng tự thử và xác nhận ổn. Review toàn bộ diff/schema/seed/backend/frontend/test; giữ API chỉ đọc, bind localhost, giá từ database, không sửa migration V1/V2 đã áp dụng hoặc dữ liệu demo.
+- **Lỗi đã sửa:** ảnh lỗi không thử lại khi Làm mới cùng đường dẫn; một đường dẫn ảnh sai làm frontend loại cả menu; cảnh báo snapshot cũ biến mất trong lúc thử lại dù chưa đọc được dữ liệu mới. Sau sửa, ảnh có lượt thử lại, ảnh sai chỉ hiện placeholder và không được request, cảnh báo giữ tới khi snapshot mới thành công.
+- **Bằng chứng tái hiện:** thêm 3 test hồi quy, chạy `npm.cmd run test:e2e -- --grep 'retries failed images|isolates an invalid image|keeps stale-menu'` trên bản trước sửa → cả 3 thất bại đúng lỗi nêu trên. Không bỏ/giảm assertion để làm test đạt.
+- **Build sau sửa:** tại root, `scripts/Stop-Preview.ps1`, `scripts/dev.ps1 build` → exit 0; npm ci/lint, TypeScript/Vite build và Gradle clean build đạt. Báo cáo XML xác nhận **11 test PostgreSQL/Testcontainers**, 0 failures/errors (5 menu, 5 bàn, 1 schema/default profile), biệt lập database demo.
+- **Browser sau sửa:** `scripts/Start-Preview.ps1`, rồi tại frontend đặt `E2E_BASE_URL=http://127.0.0.1:8080` và chạy `npm.cmd run test:e2e` → **13/13 Chromium đạt** (10 menu gồm 3 hồi quy mới, 3 bàn). Bao gồm menu thật/reload/giá/ảnh/trạng thái, lỗi/rỗng/thử lại, tablet dọc/ngang và màn hình nhỏ.
+- **Review quyền/tiền/dữ liệu:** không có API ghi hoặc thay đổi đơn/thanh toán; seed không ghi đè giá/trạng thái; request cũ không cập nhật sau khi rời trang; mất kết nối không dựng menu giả. Không phát hiện thêm lỗi chặn bàn giao trong phạm vi menu chỉ đọc sau khi sửa và chạy lại kiểm tra.
+- **Kiểm tra trước commit:** đối chiếu giá trị secret trong `.env` với source và bundle, quét mẫu token/private key và rà tên file; không phát hiện secret hoặc file môi trường thật trong nội dung đưa vào commit. `.env`, `.work`, dependency, build, log và dữ liệu database bị Git ignore; `.env.example` chỉ là mẫu giả. Kiểm tra lại trên Git index trước commit; `git diff --check` đạt. Đây là rà local theo mẫu/giá trị đã biết, không phải chứng nhận security audit toàn hệ thống.
+- **Mốc lưu:** Git đã cấu hình local và origin; commit bàn giao có tiêu đề `feat: add database-backed sample menu`, gồm menu và phần review này. Xem SHA bằng `git log -1 --oneline`. Chưa push; CI Linux cho menu chưa chạy. Lịch sử CI M1 không được coi là bằng chứng cho menu.
+- **Hạn chế còn lại:** chỉ demo local, chưa có đăng nhập/phân quyền; chưa thử Safari/iPad thật, LAN/WAN, tải đồng thời hoặc backup/restore. Ảnh là minh họa local, chưa có upload/quản trị menu, giỏ/gửi món/bếp/thu tiền. Không còn việc menu đang dở cần chặn bước tiếp.
+- **Bước tiếp theo được người dùng giao:** đăng nhập nhân viên/bếp; triển khai ở task kế tiếp, gồm xác thực và phân quyền server phù hợp. Chưa bắt đầu tính năng đăng nhập trong commit menu này; vẫn giữ localhost trước khi có quyền và kiểm tra tương ứng.
+- **Tự kiểm chứng:** preview tại http://127.0.0.1:8080; F5/menu nhóm/món hết vẫn hoạt động. Chặn request ảnh rồi Làm mới để thấy placeholder, bỏ chặn và Làm mới để phục hồi ảnh; sau lỗi API, giữ request thử lại ở trạng thái chờ để thấy cảnh báo dữ liệu cũ còn nguyên. Chi tiết lệnh ở README và test hồi quy ở `frontend/tests/menu.spec.ts`.
+
+Mục menu ban đầu bên dưới giữ bằng chứng triển khai trước review (10 test browser lúc đó); kết quả mới nhất là 13 test ở mục này.
+
+## Menu mẫu từ database — 30/10/2026
+
+### Đã làm
+
+- Đọc AGENTS, README, STATUS, PRODUCT, DOMAIN, ARCHITECTURE, UX, TESTING, OPERATIONS và DECISIONS; kiểm tra Git sạch trước sửa và code thực tế chỉ có API/UI bàn.
+- Thêm Flyway **V2** tạo nhóm/món, khóa ngoại và ràng buộc giá `BIGINT` nguyên đồng không âm, trong giới hạn số nguyên JavaScript an toàn; giữ nguyên V1. Seed riêng profile demo tạo 3 nhóm, 6 món, gồm 1 món hết; chạy lại không ghi đè giá/tên/trạng thái hiện có.
+- `GET /api/menu` đọc PostgreSQL qua module menu, transaction read-only cùng snapshot, DTO nhóm/món, tổng và thời điểm đọc; no-store, lỗi dữ liệu trả 503 chung; POST bị từ chối. Không thêm API quản trị hoặc mutation gọi món.
+- Trang chủ mở thực đơn, nhóm lọc/tên/giá/đường dẫn ảnh/tình trạng lấy từ API; không có mảng món trong giao diện. 6 ảnh SVG minh họa local đóng gói cùng jar. Sơ đồ bàn được giữ ở `/#tables`, có điều hướng qua lại.
+- UI có tải dữ liệu, không có món, lỗi mạng/HTTP, thử lại, cảnh báo giá/tình trạng snapshot cũ và placeholder khi ảnh lỗi; timeout request 10 giây. Bố cục tablet dọc/ngang, vùng chạm bộ lọc tối thiểu 44px; font tiêu đề dùng system để dấu tiếng Việt rõ trên máy thử.
+- Cập nhật PRODUCT/DOMAIN/ARCHITECTURE/UX/TESTING/DECISIONS và README; giá VND theo món/ảnh minh họa là mặc định mẫu, chưa chốt menu thật, thuế/phí hoặc các luật gọi món.
+
+### Bằng chứng kiểm tra thực tế
+
+| Lệnh / kiểm tra | Kết quả quan sát |
+| --- | --- |
+| `npm.cmd run typecheck`, `npm.cmd run lint`, `npm.cmd run build` trong frontend | TypeScript đạt; lint không còn cảnh báo; Vite build đạt. Lint/build được chạy lại sau chỉnh font cuối cùng |
+| Dot-source `scripts/Use-Java21.ps1`, rồi `backend/gradlew.bat --no-daemon clean build` tại backend | BUILD SUCCESSFUL; **11 test**, 0 lỗi: 5 menu, 5 bàn, 1 schema/default profile, đều với PostgreSQL/Testcontainers biệt lập |
+| `backend/gradlew.bat --no-daemon bootJar` tại backend sau build frontend cuối | Đóng gói lại tài nguyên CSS/ảnh cuối cùng thành công; code Java không đổi sau 11 test. Kiểm thử browser chạy lại trên jar này |
+| Các test menu PostgreSQL | Kiểm tra seed/thứ tự/no-store/giá/món hết; sửa bản ghi đã commit được API phản ánh qua nhiều request; chạy lại seed không reset/nhân đôi; menu không có món; giá âm/vượt số nguyên an toàn và nhóm không tồn tại bị từ chối; POST 405; mô phỏng relation không đọc được → 503 không lộ chi tiết |
+| `scripts/Start-Preview.ps1` trên database demo có sẵn từ M1 | Migration/seed menu áp dụng thành công; health UP; API có 3 nhóm/6 món, vẫn giữ 30 bàn và volume cũ |
+| `E2E_BASE_URL=http://127.0.0.1:8080`, `npm.cmd run test:e2e` trong frontend | **10 test Chromium đạt**: 7 menu và 3 bàn; dữ liệu/giá/ảnh/tình trạng đối chiếu API thật, reload, lọc, điều hướng, tải/rỗng/lỗi/thử lại/snapshot cũ, dữ liệu API sai/ảnh hỏng |
+| Tablet 768 × 1024, 1024 × 768; màn hình nhỏ 375 × 812 | Các test menu không tràn ngang; bộ lọc có vùng chạm ≥44px. Hồi quy sơ đồ bàn 768 × 1024 vẫn đạt |
+| Đọc menu → `Stop-Preview.ps1` → `Start-Preview.ps1` → đọc lại | JSON nhóm/món trước/sau restart giống nhau (ID, tên, giá, ảnh, khả năng bán); total=6, categories=3, health UP. Không xóa volume hoặc reset database |
+| Chromium chụp `.work/menu-tablet.png`, `.work/menu-desktop.png` | Đã xem ảnh giao diện và chỉnh font tiếng Việt; không có pageerror JavaScript. Ảnh nằm trong thư mục Git ignore |
+
+Đã xử lý các lỗi gặp trong quá trình chạy: sandbox không truy cập Docker/socket local nên lệnh Docker/preview/browser cần chạy ngoài sandbox; preview cũ khóa jar Windows (đã xác minh đúng command line của dự án trước khi dừng); lỗi generic overload trong assert test và cảnh báo React setState trong effect được sửa rồi chạy lại đạt. Không sửa test để bỏ qua lỗi nghiệp vụ.
+
+Đã rà phạm vi quyền/tiền/đơn: chỉ thêm đọc menu local, giá từ database, không có thao tác tạo đơn/thanh toán cần chống trùng; seed bảo toàn bản ghi cũ. Request cũ bị hủy khi rời trang/tải lại, lỗi không dựng menu giả và snapshot cũ được cảnh báo. Chi tiết nghiệp vụ/kiến trúc ở DOMAIN/ARCHITECTURE.
+
+### Đang chạy / tự thử / bước tiếp
+
+- Preview UI + API tại http://127.0.0.1:8080; PostgreSQL demo được giữ nguyên. Mở trang chủ, thử ba nhóm món, kiểm tra Bún chả Hà Nội có nhãn Hết món, nhấn F5 và Làm mới; chọn Sơ đồ bàn để xem màn hình cũ. API đối chiếu tại `/api/menu`.
+- Thử lỗi: DevTools Network → Offline rồi Làm mới; thấy cảnh báo dữ liệu cũ. Bỏ Offline, bấm Tải lại thực đơn để phục hồi. Lệnh khởi động/dừng và kiểm thử ở README.
+- Không còn phần menu mẫu đang dở hoặc vướng mắc nghiệm thu local. Hạn chế và mốc commit sau review ở mục bàn giao phía trên; chưa push/chạy CI Linux cho menu.
+- Người dùng đã thử menu ổn. Bước tiếp sau review là đăng nhập nhân viên/bếp; chưa thêm giỏ, quản trị menu, bếp hoặc thu tiền.
+
+Các mục dưới đây ghi lịch sử bộ khung M1 trước menu; số test/khả năng trong các mục M1 chỉ áp dụng tại thời điểm đó.
 
 ## Khởi động lại và lưu phiên bản — 30/10/2026
 
@@ -57,6 +111,6 @@ Integration test kiểm tra profile mặc định không seed, demo đủ 30 bà
 ## Chưa kiểm tra / bước tiếp
 
 - Kết quả push/CI của M1.6 theo mục ngày 30/10 phía trên; không coi local build là bằng chứng Linux/GitHub Actions đã đạt.
-- Chưa có đăng nhập, phiên bàn, gửi món, bếp hoặc thu tiền. Chốt D008/D009 và loại menu trước M2; các luật tiền/hủy/giảm trước module tương ứng.
+- Menu mẫu chỉ đọc đã hoàn thành theo mục mới phía trên. Chưa có đăng nhập, phiên bàn, gửi món, bếp hoặc thu tiền. Chốt D008/D009 và loại menu thực tế trước phần gọi món M2; các luật tiền/hủy/giảm trước module tương ứng.
 - Chưa thử LAN/WAN, iPad/Safari thật, máy chủ tại quán, tải 30 phiên đồng thời, HTTPS, backup/restore. Kiến trúc tại quán vẫn là đề xuất.
-- Tiếp theo: chủ dự án thử ứng dụng đang chạy ở localhost:8080 và xem tag v0.1.0-m1 trên GitHub; sau đó giao M2 theo một lát cắt quyền/phiên/menu/gửi món được chốt riêng. M1.6 đã có bằng chứng GitHub Actions Linux cho commit bộ khung.
+- Tiếp theo: đăng nhập nhân viên/bếp theo yêu cầu mới nhất sau khi người dùng thử menu ổn; phiên/gửi món được giao riêng sau đó. Tag v0.1.0-m1 và CI Linux đã ghi ở trên chỉ là mốc bộ khung, chưa gồm menu mẫu.
