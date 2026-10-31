@@ -1,6 +1,63 @@
 # Trạng thái hiện tại
 
-Cập nhật: 30/10/2026 — bước 6.2 đã được người dùng thử đăng nhập thành công, review, commit/push và CI Linux thành công cho đúng commit đăng nhập. Bước tiếp: 6.3 — danh sách bàn và mở phiên phục vụ.
+Cập nhật: 31/10/2026 — người dùng đã thử OK bước 6.3 và bản sửa thanh bên laptop, yêu cầu kết thúc phiên. Review local hoàn tất; đang lưu commit/push và kiểm tra CI cho đúng bản 6.3. Bước tiếp: 6.4 — gắn tablet và khách gửi món.
+
+## Chốt bàn giao bước 6.3 — 31/10/2026
+
+- **Nghiệm thu:** người dùng xác nhận “đã test ok” sau bản sửa thanh bên, yêu cầu thực hiện các việc kết thúc phiên. Đây là xác nhận thử tay bản bàn giao, không suy rằng mọi ca quyền/đồng thời/mạng đã được người dùng thử riêng; các ca đó có bằng chứng tự động bên dưới.
+- **Review cuối:** đọc lại nghiệp vụ/kiến trúc, code/migration/UI/test và workflow; không phát hiện lỗi chặn chốt về quyền, sai bàn, trùng phiên, transaction hoặc dữ liệu cũ/mất phản hồi. Không thay đổi code sau bản người dùng đã thử; không triển khai đóng/dọn/trả bàn trống hoặc bước 6.4 trong lần chốt này.
+- **Kiểm tra local:** giữ bằng chứng thực chạy `dev.ps1 build` với 22 test PostgreSQL, lớp phiên 6/6 sau tăng cường chứng minh tranh chấp khóa, typecheck/lint/build frontend và 29/29 Chromium của jar cuối. Rà lại `.last-run.json` xác nhận passed, XML lớp phiên 0 failures/errors. Không ghi rằng đã chạy lại toàn bộ test ở lượt chốt nếu chỉ đối chiếu báo cáo; CI sau push sẽ kiểm tra sạch trên Linux.
+- **Git/remote:** `git fetch origin` thành công, baseline local/origin cùng `eb012d455ba5c6287c8bd2b4c0b3d0b03a4fc362` (0 ahead/behind). GitHub API xác nhận default branch `main`, không bảo vệ nhánh, có quyền push; tiếp tục luồng main hiện có, không force push.
+- **An toàn source:** `git diff --check` và `.work/scan-review.cjs` đạt; 107 file source cùng bundle/log preview không chứa giá trị secret local đã biết hoặc mẫu private key/GitHub token. `.env`, `.work`, dependency/build/test report bị ignore. Kiểm tra thêm Git index trước commit, không đưa dữ liệu PostgreSQL hoặc mật khẩu demo vào Git.
+- **Lưu phiên bản/CI:** đang thực hiện theo yêu cầu người dùng; chỉ cập nhật SHA/run/kết luận sau khi quan sát kết quả thật. Các run 6.2/M1 cũ không được dùng làm bằng chứng 6.3.
+- **Kết thúc local:** sau khi chốt GitHub, dừng managed preview và PostgreSQL Compose bằng script hiện có, giữ volume và các phiên người dùng đã mở; không tắt Docker Desktop toàn máy hoặc xóa dữ liệu. Lệnh khởi động lại ở README. Hạn chế Safari/iPad thật, LAN/HTTPS, tải toàn quán và backup/restore vẫn giữ nguyên; bước tiếp 6.4.
+
+Các mục triển khai bên dưới ghi lại trạng thái tại thời điểm thử/chờ nghiệm thu; trạng thái bàn giao mới nhất là mục chốt này.
+
+## Sửa thanh bên cho laptop sau khi người dùng thử — 31/10/2026
+
+- Người dùng gửi ảnh thanh bên bị cắt phần dưới và yêu cầu sửa bố cục; câu hỏi về chờ dọn/trả bàn trống chỉ yêu cầu giải thích, không triển khai nghiệp vụ đó. Chỉ đổi CSS thanh bên, thêm test hồi quy và tài liệu; giữ mọi thay đổi 6.3 đang chờ chốt.
+- Nguyên nhân: sidebar fixed không có vùng cuộn, nhiều khoảng cách/khối trang trí theo chiều rộng nhưng chưa thích ứng chiều cao; nội dung vượt vùng xem ở laptop/Windows scale/zoom nên nút Đăng xuất bị cắt. Không cần giảm zoom của người dùng để ứng dụng hoạt động.
+- Sửa: sidebar `100dvh`, cuộn dọc độc lập, không co vùng bấm; chiều cao ≤760px ẩn khẩu hiệu trang trí và giảm khoảng cách, giữ điều hướng/tài khoản/Đăng xuất. Mobile vẫn header chiều cao tự nhiên trong luồng trang. Không thêm thư viện hoặc đổi backend/database/quyền.
+- Tái hiện trước sửa: `E2E_BASE_URL=http://127.0.0.1:8080`, `npm.cmd --prefix frontend run test:e2e -- --grep 'short laptop|extreme height|mobile header'`: **2 thất bại, 1 đạt**. Ở 1366×600, đáy nút Đăng xuất vượt tới 669px; vùng xem cao 240px không thể focus/nhìn thấy nút.
+- Sau sửa: `npm.cmd --prefix frontend run typecheck`, `run lint`, `run build` đạt; `backend/gradlew.bat -p backend --no-daemon bootJar` đạt; Stop/Start-Preview thành công. Chạy `npm.cmd --prefix frontend run test:e2e` trên jar mới: **29/29 Chromium đạt**, gồm 26 ca cũ và 3 hồi quy sidebar. Không chạy lại test backend vì chỉ sửa CSS/test UI; 22 test backend của 6.3 bên dưới là bằng chứng lần chạy trước.
+- Kiểm tra vùng xem 1366×600, 1280×630, 1024×500, 853×420: menu/Đăng xuất ≥44px, nằm trong vùng nhìn trước/sau cuộn nội dung; 1024×240 cuộn sidebar và logout bằng bàn phím được; mobile 375×812 không tràn ngang/header quá cao. Đã xem ảnh `.work/sidebar-laptop.png` và `.work/sidebar-short.png`. Các kích thước CSS mô phỏng vùng xem thu nhỏ do scale/zoom, chưa thay thế thử trực tiếp cấu hình laptop/zoom của chủ dự án.
+- `git diff --check` đạt; review thay đổi chỉ bố cục, không có mutation bàn/đơn/tiền. Preview đang chạy http://127.0.0.1:8080/#tables; dữ liệu hai bàn đang phục vụ do người dùng mở được giữ nguyên. Restart yêu cầu đăng nhập lại; dùng Ctrl+Shift+R để tải giao diện mới. Chưa commit/push/CI, tiếp tục chờ người dùng thử và giao chốt.
+
+## Danh sách bàn và mở phiên phục vụ — 6.3, 31/10/2026
+
+### Đã làm và phạm vi
+
+- Đọc AGENTS/README/STATUS, PRODUCT/DOMAIN/ARCHITECTURE/UX/DECISIONS/TESTING/OPERATIONS; kiểm tra code và Git thực tế. Bắt đầu trên `main`, working tree sạch, HEAD `eb012d4` (tài liệu chốt 6.2); chức năng đăng nhập ở `9cd161c` đã có code/test và bằng chứng CI riêng bên dưới. Không lấy CI cũ làm bằng chứng cho 6.3. Giữ nhánh hiện tại, chưa commit/push theo yêu cầu chờ người dùng thử.
+- Khởi động Docker Desktop và PostgreSQL Compose, giữ `.env`, tài khoản và volume cũ; dừng preview trước đóng gói. Không nâng dependency/stack hoặc mở LAN.
+- B01–B30 đã có từ seed demo, không cần seed mới. Thêm **Flyway V4** tạo `table_session` riêng bàn vật lý, FK bàn/người mở, thời gian database và partial unique index một phiên hoạt động/bàn (`OPEN`/`CHECKOUT_PENDING`). Không sửa V1–V3/seed đã có; không tự tạo phiên cho bàn cũ.
+- STAFF được GET danh sách/chi tiết và POST `/api/tables/{id}/sessions` với CSRF. Mở bằng row lock bàn + transaction, cập nhật trạng thái và insert phiên nguyên tử; actor lấy từ principal, thời gian từ PostgreSQL. Mở lại/chờ dọn 409 có mã lỗi; không có bàn 404; bếp 403, anonymous 401 khi CSRF hợp lệ; lỗi database 503 chung. Menu/bếp/quyền cũ giữ theo phạm vi đã có.
+- UI 30 bàn, lọc khu, ba trạng thái trống/đang phục vụ/chờ dọn. Chọn bàn để đọc chi tiết mới rồi xác nhận mở; hiện mã phiên, người và thời gian. Khóa gửi trùng; xung đột đọc lại trạng thái; mất phản hồi báo chưa xác định, không tự POST lại. Cảnh báo snapshot cũ giữ trong lúc thử lại, lỗi không dựng bàn giả.
+- Cập nhật DOMAIN (nghiệp vụ), DECISIONS D008/D021 (xác nhận tách bàn/phiên và lựa chọn kỹ thuật), ARCHITECTURE, UX, PRODUCT, TESTING, OPERATIONS, README và hướng dẫn AGENTS. Chưa có đóng/dọn bàn, tablet/credential khách, gửi món hoặc tiền trong bước này.
+
+### Bằng chứng kiểm tra thực tế
+
+| Lệnh / kiểm tra | Kết quả |
+| --- | --- |
+| `scripts/Initialize-Dev.ps1`, `scripts/dev.ps1 db` | Giữ cấu hình hiện có, Docker Linux và PostgreSQL healthy với volume cũ. Khởi động Docker/Gradle/preview/browser ngoài sandbox sau khi sandbox không chạy được Docker/Gradle loopback |
+| `scripts/dev.ps1 build` | Exit 0: npm ci/lint, TypeScript/Vite build và Gradle **clean build**; **22 test PostgreSQL/Testcontainers** đạt (5 identity, 5 menu, 5 bàn cũ, 1 schema, 6 phiên mới), không bỏ test |
+| `backend/gradlew.bat -p backend --no-daemon test --tests '*TableSessionIntegrationTests'` sau bổ sung chứng minh tranh chấp khóa | BUILD SUCCESSFUL, **6/6** đạt; mỗi một trong năm bàn có hai transaction thật cùng chờ khóa trước khi được thả, đúng một 201/một 409 và một phiên. Báo cáo XML cuối riêng lớp phiên có 0 failures/errors |
+| Integration phiên với PostgreSQL và HTTP/cookie thật | B01 mở, B02 không đổi; không tin actor/time giả; mở lại 409 rõ ràng; bếp/anonymous/CSRF bị chặn; bàn chờ dọn/mất/đã có phiên bị từ chối; seed/Flyway chạy lại không reset/nhân đôi; unique index chặn OPEN và CHECKOUT_PENDING trùng; CLOSED giữ lịch sử; lỗi insert sau update rollback bàn và không lộ SQL/secret |
+| `npm.cmd --prefix frontend run typecheck`, `run lint`, `run build`; sau chỉnh UI cuối chạy lại lint/build | Exit 0, lint không cảnh báo; build TypeScript/Vite đạt. Sau cùng đóng gói lại bằng `backend/gradlew.bat -p backend --no-daemon bootJar` và Start-Preview thành công |
+| `E2E_BASE_URL=http://127.0.0.1:8080`, `npm.cmd --prefix frontend run test:e2e` trên jar UI cuối | **26/26 Chromium đạt**: 7 auth, 10 menu, 3 bàn cũ với API thật; 6 UI phiên mô phỏng response để kiểm tra xác nhận, xung đột, mất phản hồi/tra trạng thái, double-click/expiry, snapshot cũ, chờ dọn và bố cục. Không gọi các mock UI là test transaction |
+| `.work/Verify-TableSessions.ps1` và `.work/verify-table-ui.cjs` (kiểm tra local, Git ignore) | Dùng database tạm riêng trên PostgreSQL phát triển và jar ở 8081: trình duyệt đăng nhập thật → mở B01 qua UI → API/database có phiên/người/thời gian, B02 không đổi; POST lặp 409, bếp 403; reload giữ nguyên. Dừng jar, restart PostgreSQL, chạy jar/login lại: JSON B01 khớp toàn bộ trước/sau. Dọn đúng database tạm; không mở/xóa phiên demo |
+| 768×1024, 1024×768, 375×812 và ảnh `.work/session-*.png` | Luồng live và test UI không tràn ngang; nút chi tiết ≥44px. Đã xem ảnh tablet dọc và điện thoại, chữ/trạng thái/người/thời gian hiển thị đúng; không có pageerror trong luồng live |
+
+### Review, giới hạn và bàn giao
+
+- Đã review migration/service/controller/security hiện có, UI, test và diff về quyền/sai bàn/trùng phiên/rollback/mất kết nối. Một SQL đọc bàn+phiên giữ cùng snapshot; các giá trị ghi do server lấy, query tham số hóa; không có thay đổi giá/đơn/tiền. Kỳ vọng số migration của test tăng đúng một do V4, không giảm assertion nghiệp vụ. Không phát hiện lỗi chặn nghiệm thu local.
+- `git diff --check` đạt. Script rà local `.work/scan-review.cjs` kiểm tra 106 file source (gồm file mới), bundle frontend và log preview: không thấy giá trị secret thật trong `.env`; quét mẫu private key/GitHub token không thấy kết quả. `.env`, `.work`, dependency/build/test report vẫn bị Git ignore; không đưa dữ liệu kiểm thử hoặc credential vào source. Đây là kiểm tra theo giá trị/mẫu đã biết, không phải audit bảo mật toàn hệ thống.
+- Ứng dụng demo để thử tại **http://127.0.0.1:8080/#tables**, health UP; `nhanvien` dùng `DEMO_STAFF_PASSWORD`, `bep` dùng `DEMO_KITCHEN_PASSWORD` trong `.env` local tại root. Không chép mật khẩu vào source/tài liệu. B01 demo giữ trống để chủ dự án mở; hướng dẫn chi tiết/repeat 409/hai cửa sổ/restart ở README.
+- Tự thử: đăng nhập nhân viên → Mở bàn B01 → Mở phiên B01 → xem người/thời gian; B02 giữ trống → F5 → Xem bàn B01 vẫn cùng phiên. Hai cửa sổ cùng chọn một bàn trống rồi mở: một thành công, một xung đột. Restart cần login lại nhưng giữ phiên phục vụ.
+- **Đang chờ:** người dùng tự nghiệm thu và lời nhắn giao chốt commit/push/CI. Chưa chạy CI 6.3; CI 6.2 phía dưới chỉ áp dụng SHA cũ. Không còn phần code 6.3 đang dở cần chặn thử local.
+- **Chưa kiểm chứng:** Safari/iPad thật, LAN/WAN/HTTPS, tải đủ 30 phiên đồng thời, máy tại quán, backup/restore; demo tiếp tục bind localhost. Thử hai nhân viên tranh chấp không thay cho thử tải toàn quán. Không cần thao tác trên tablet thật để nghiệm thu localhost này; 6.4 sẽ xử lý gắn tablet và khách gửi món.
+
+Các mục phía dưới là lịch sử trước 6.3; những câu “chưa mở phiên” và số lượng test cũ áp dụng ở thời điểm ghi nhận đó.
 
 ## Chốt bước 6.2 và kiểm chứng CI GitHub — 30/10/2026
 

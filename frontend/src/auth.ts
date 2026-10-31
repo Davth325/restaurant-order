@@ -6,11 +6,11 @@ export async function api(path: string, options: RequestInit = {}) {
   return fetch(path, { ...options, credentials: 'same-origin', cache: 'no-store', signal })
 }
 
-export async function authPost(path: string, body?: URLSearchParams) {
-  const response = await api('/api/auth/csrf')
+export async function authPost(path: string, body?: URLSearchParams, signal?: AbortSignal) {
+  const response = await api('/api/auth/csrf', { signal })
   if (!response.ok) throw new Error('Không kết nối được hệ thống quán. Vui lòng thử lại.')
   const csrf: { token: string; headerName: string } = await response.json()
-  return api(path, { method: 'POST', headers: { [csrf.headerName]: csrf.token }, body })
+  return api(path, { method: 'POST', headers: { [csrf.headerName]: csrf.token }, body, signal })
 }
 
 export async function currentStaff(): Promise<Staff | null> {

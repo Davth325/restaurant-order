@@ -8,6 +8,8 @@ PostgreSQL phát triển chạy Compose, volume `restaurant-order_postgres_data`
 
 ## Trước demo LAN
 
+Từ 6.3, phiên phục vụ lưu ở `table_session` cùng PostgreSQL với bàn/tài khoản. Dừng/chạy jar hoặc Compose với volume cũ giữ phiên/người/thời gian, nhưng HTTP session vẫn yêu cầu đăng nhập lại. Flyway V4 chỉ thêm schema, không tự tạo/reset phiên. Chưa có API đóng/dọn/reset bàn; không xóa volume để chuẩn bị lượt mới. Kiểm tra restart 6.3 và phạm vi database đã thử ghi ở STATUS.
+
 Sau bước 6.2, local đã có phiên nhân viên/bếp nhưng vẫn bind localhost. Chuẩn bị `.env` qua Initialize-Dev trước seed Flyway demo; mật khẩu demo sinh riêng, chỉ bản băm vào PostgreSQL. Giữ `.env` khớp tài khoản đã seed, không đổi/xóa volume để reset mật khẩu. Không chạy profile demo tại quán thật; việc tạo/quản trị tài khoản thật để 6.10. Session lưu RAM, restart yêu cầu đăng nhập lại; không mất tài khoản/menu/bàn. Trước LAN phải thiết lập HTTPS tin cậy, `SESSION_COOKIE_SECURE=true`, tài khoản phù hợp và thử thiết bị mục tiêu. Các kết quả kiểm thử local không xác nhận đã vận hành LAN.
 
 - Máy chủ có Java/runtime, PostgreSQL, frontend, ảnh/font/menu và tài khoản local đã chuẩn bị.

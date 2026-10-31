@@ -2,7 +2,7 @@
 
 ## Menu mẫu hiện có — 30/10/2026
 
-Mở trang chủ thấy “Thực đơn hôm nay”; điều hướng “Thực đơn” / “Sơ đồ bàn” hoạt động cả trên màn hình nhỏ. Nhóm lọc lấy từ API, mỗi thẻ hiển thị ảnh minh họa, tên, giá VND và chữ Còn bán/Hết món. Chưa có phiên bàn nên không hiển thị một bàn khách giả hoặc nút thêm/gửi chưa hoạt động.
+Mở trang chủ thấy “Thực đơn hôm nay”; điều hướng “Thực đơn” / “Sơ đồ bàn” hoạt động cả trên màn hình nhỏ. Nhóm lọc lấy từ API, mỗi thẻ hiển thị ảnh minh họa, tên, giá VND và chữ Còn bán/Hết món. Menu công khai chưa gắn quyền khách với phiên bàn; không hiển thị một bàn khách giả hoặc nút thêm/gửi chưa hoạt động.
 
 Nút và bộ lọc có vùng chạm ít nhất 44px; lưới thích ứng tablet dọc/ngang. Khi đang tải có thông báo và khóa Làm mới; menu trống có lời nhắn riêng; mất kết nối có nút thử lại. Nếu giữ snapshot cũ sau lỗi, cảnh báo rõ giá/tình trạng có thể đã thay đổi. Lỗi ảnh chỉ thay ảnh bằng placeholder, giữ tên/giá. Những màn hình khách/nhân viên/bếp bên dưới vẫn là thiết kế đề xuất.
 
@@ -14,7 +14,15 @@ Sau review: cảnh báo snapshot cũ được giữ trong lúc thử lại, ch�
 - Form có tên đăng nhập, mật khẩu, trạng thái đang gửi, thông báo sai thông tin chung và lỗi mạng; mật khẩu được xóa khỏi state/input sau mỗi lượt gửi. Hỗ trợ password manager, bàn phím và nhãn trường rõ; không ghi nhớ credential trong storage của ứng dụng.
 - Thành công tự vào `/#tables` cho nhân viên hoặc `/#kitchen` cho bếp. Sidebar hiển thị tên/vai trò; đi nhầm màn hình có thông báo Không có quyền truy cập và đường về khu vực của mình. Bếp chưa có hàng đợi ở bước này, lời nhắn thể hiện đúng phạm vi.
 - Logout thành công đưa về form. Nếu mất mạng, giữ thông báo chưa xác nhận đăng xuất và cho thử lại. Phiên bị thu hồi/hết hạn nhận 401/403 thì gỡ màn hình nội bộ và đề nghị đăng nhập lại; kiểm tra phiên khi quay lại tab. Không suy phiên đã hết chỉ từ lỗi mạng.
-- Các màn hình gọi món/mở phiên/bếp phía dưới vẫn là đề xuất giai đoạn sau, không phải chức năng đã có.
+- Các màn hình gọi món/hàng đợi bếp phía dưới vẫn là đề xuất giai đoạn sau; mở phiên đã có ở 6.3 bên dưới.
+
+## Sơ đồ bàn và mở phiên — 6.3
+
+- `/#tables` cho nhân viên, 30 thẻ B01–B30 và lọc Khu A/B như trước. Tổng quan có trống/đang phục vụ/chờ dọn; trạng thái có chữ cùng màu, không suy số bàn từ mảng viết cứng trong UI.
+- Chọn “Mở bàn B01” (bàn trống) hoặc “Xem bàn B01” (bàn khác) để hiện khu Chi tiết B01 và đọc trạng thái mới. Khu chi tiết cuộn vào vùng nhìn, có nút “Mở phiên B01” khi trống, bước xác nhận rõ đúng mã bàn. Đang đọc/lỗi dữ liệu/đang gửi thì khóa mở.
+- Thành công hiện phiên #ID, người mở (tên và username), thời điểm theo múi giờ trình duyệt, trạng thái phiên; thẻ đúng bàn chuyển Đang phục vụ. Reload vẫn đọc API. Bàn có phiên không còn nút mở; chờ dọn có lời nhắn chưa sẵn sàng.
+- Khi nhân viên khác vừa mở: nhận 409, thông báo không thể mở thêm và đọc lại chi tiết. Timeout/lỗi gửi chưa xác định: báo rõ, khóa mở/chọn bàn tới khi “Kiểm tra trạng thái B01” đọc thành công; không tự POST lại. Có thể rời trang và vào lại để đọc snapshot mới, backend vẫn bảo đảm không tạo trùng.
+- Lỗi tải lại giữ snapshot kèm cảnh báo trong cả lúc đang thử lại; không mở dựa trên snapshot cũ. Phiên login hết hạn khi đọc/gửi thì bỏ bàn và quay về đăng nhập. Chưa có nút đóng/dọn hoặc gắn tablet trong 6.3.
 
 ## Khách trên tablet
 
@@ -49,6 +57,8 @@ Sau review: cảnh báo snapshot cũ được giữ trong lúc thử lại, ch�
 - Thấy tình trạng máy chủ/sao lưu phù hợp, không đưa lỗi kỹ thuật dài vào màn hình khách.
 
 ## Quy tắc giao diện
+
+Thanh bên desktop cố định theo chiều cao vùng xem thực tế (`100dvh`), cuộn dọc riêng khi quá thấp và không làm co nhỏ vùng bấm. Khi chiều cao ≤760px, ẩn khối khẩu hiệu trang trí và giảm khoảng cách để giữ điều hướng/tài khoản/Đăng xuất trong vùng nhìn; không phụ thuộc máy là laptop hay desktop. Mobile ≤620px vẫn dùng header trong luồng trang với chiều cao tự nhiên. Quy tắc này cũng áp dụng khi Windows scale hoặc zoom trình duyệt làm giảm vùng xem CSS; không yêu cầu người dùng giảm zoom để bấm được Đăng xuất.
 
 Ưu tiên tablet, nút cảm ứng dễ bấm, chữ rõ, tương phản đủ. Trạng thái có cả chữ và màu. Không dùng âm thanh như dấu hiệu duy nhất. Kiểm tra Safari/iPad thật; giới hạn tự phát âm thanh và việc màn hình ngủ có thể ảnh hưởng trải nghiệm.
 

@@ -5,11 +5,21 @@ Các quy tắc dưới đây là thiết kế đề xuất cho bản đầu, tr�
 ## Đăng nhập nhân viên/bếp đã triển khai — bước 6.2
 
 - StaffUser định danh bằng username duy nhất, tên hiển thị, mật khẩu băm BCrypt, vai trò `STAFF` hoặc `KITCHEN`, cờ enabled. Backend lấy quyền từ tài khoản PostgreSQL; frontend không tự cấp quyền.
-- `STAFF` được xem danh sách bàn; `KITCHEN` được vào khu vực bếp riêng. Hai vai trò không tự có quyền của nhau. Menu chỉ đọc công khai để giữ luồng xem menu hiện tại, chưa gắn quyền khách với phiên bàn. Chưa có quyền thu tiền/hủy/giảm hoặc quản lý tài khoản; không tạo vai trò quản lý chưa dùng.
+- `STAFF` được xem danh sách bàn và mở/xem phiên phục vụ theo bước 6.3 bên dưới; `KITCHEN` được vào khu vực bếp riêng. Hai vai trò không tự có quyền của nhau. Menu chỉ đọc công khai để giữ luồng xem menu hiện tại, chưa gắn quyền khách với phiên bàn. Chưa có quyền thu tiền/hủy/giảm hoặc quản lý tài khoản; không tạo vai trò quản lý chưa dùng.
 - Demo có hai tài khoản tổng hợp `nhanvien` và `bep`, mật khẩu riêng sinh trong `.env` local. Flyway seed chỉ profile demo, không reset hash/tên/quyền/enabled đã tồn tại; profile mặc định không tạo tài khoản mẫu. Đổi `.env` sau seed không đổi mật khẩu đã lưu; quản trị/reset để 6.10.
-- Sau đăng nhập, nhân viên vào sơ đồ bàn, bếp vào màn hình bếp. Màn hình bếp mới là điểm vào có kiểm tra quyền, chưa có hàng đợi hoặc thao tác món. Danh sách bàn vẫn chỉ đọc; mở phiên là 6.3.
+- Sau đăng nhập, nhân viên vào sơ đồ bàn, bếp vào màn hình bếp. Màn hình bếp mới là điểm vào có kiểm tra quyền, chưa có hàng đợi hoặc thao tác món.
 - Phiên phía server có thời hạn 30 phút không có request sử dụng phiên; đăng xuất thu hồi ngay, restart server buộc đăng nhập lại nhưng giữ tài khoản. Kiểm tra lại khi quay lại tab và khi gọi API; UI bỏ dữ liệu nội bộ nếu nhận 401/403, yêu cầu đăng nhập lại. Chưa có quản trị thu hồi mọi phiên/đổi quyền giữa ca; thuộc 6.10.
 - Đăng nhập sai dùng thông báo chung cho tài khoản không tồn tại, sai mật khẩu và tài khoản bị khóa; không phản hồi mật khẩu/hash. Mất kết nối khi đăng xuất phải báo chưa xác nhận được và cho thử lại.
+
+## Bàn và mở phiên đã triển khai — bước 6.3, 31/10/2026
+
+- Theo yêu cầu 6.3, bàn vật lý và lượt phục vụ là hai đối tượng riêng. Giữ B01–B30 từ seed hiện có, chạy lại không nhân đôi hoặc reset trạng thái. Không tạo phiên giả cho bàn đã có.
+- Bàn hiển thị `AVAILABLE` (Bàn trống), `OCCUPIED` (Đang phục vụ), `NEEDS_CLEANING` (Chờ dọn). Chỉ bàn trống không có phiên hoạt động được mở; đang phục vụ/chờ dọn trả xung đột 409 rõ ràng, không trả thành công cho lần mở lại.
+- Chỉ `STAFF` được mở và xem phiên qua API bàn, cùng cookie đăng nhập và CSRF hợp lệ. Bếp/anonymous không có quyền. Người mở lưu bằng khóa ngoại StaffUser lấy từ principal; thời gian do database ghi, không dùng người/thời gian/trạng thái do frontend gửi.
+- Mở thành công tạo TableSession `OPEN` và chuyển đúng bàn sang `OCCUPIED` trong cùng transaction. Một bàn chỉ có tối đa một phiên hoạt động (`OPEN` hoặc `CHECKOUT_PENDING`); hai nhân viên cùng mở chỉ một người thành công, người còn lại nhận 409. Lưu `opened_by` và `opened_at` là dấu vết mở phiên; chưa tạo module audit tổng quát.
+- Danh sách và chi tiết bàn trả phiên hiện tại với ID, trạng thái, người mở và thời gian. Phiên phục vụ lưu PostgreSQL nên còn sau reload/restart; phiên đăng nhập vẫn mất khi restart và cần đăng nhập lại. Phiên `CLOSED` không được trả là phiên hiện tại; lịch sử không bị ghi đè.
+- Mặc định phạm vi 6.3: chưa có thao tác đóng phiên, dọn bàn, bill hoặc cấp quyền khách/tablet. Bàn chờ dọn được hiển thị và chặn mở, chưa có nút đưa về trống. Cơ chế gắn tablet/gửi món để 6.4; luồng đóng/dọn phía dưới vẫn là đề xuất cho bước tương ứng.
+- Không tự gửi lại POST khi timeout/mất phản hồi: UI báo chưa xác định và yêu cầu đọc trạng thái mới trước thao tác tiếp. Lỗi đọc giữ cảnh báo dữ liệu cũ; không suy rằng bàn vẫn trống từ snapshot cũ.
 
 ## Menu mẫu đã triển khai — 30/10/2026
 

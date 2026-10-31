@@ -1,6 +1,6 @@
 # Ứng dụng gọi món nhà hàng
 
-Bộ khung M1, menu mẫu và đăng nhập 6.2: Java 21 + Spring Boot + Gradle Wrapper, React + TypeScript + Vite, PostgreSQL + Flyway + Spring Security. Giao diện đọc **menu và 30 bàn demo từ database thật**, có bộ lọc, tải lại và thông báo khi mất kết nối. Nhân viên/bếp có tài khoản riêng và kiểm tra quyền tại backend. Chưa có mở phiên bàn, gọi món, hàng đợi bếp hoặc thu tiền.
+Bộ khung M1, menu mẫu, đăng nhập 6.2 và mở phiên bàn 6.3: Java 21 + Spring Boot + Gradle Wrapper, React + TypeScript + Vite, PostgreSQL + Flyway + Spring Security. Giao diện đọc **menu và 30 bàn demo từ database thật**, có bộ lọc, tải lại và thông báo khi mất kết nối. Nhân viên/bếp có tài khoản riêng và kiểm tra quyền tại backend. Nhân viên mở/xem phiên phục vụ, lưu người/thời gian và chặn mở trùng kể cả đồng thời. Chưa có gắn tablet, gọi món, đóng/dọn bàn, hàng đợi bếp hoặc thu tiền.
 
 Phạm vi sản phẩm giữ nguyên: demo 30 bàn, một bếp, QR do nhân viên kiểm tra và xác nhận. Kiến trúc máy chủ tại quán chạy qua LAN khi mất Internet vẫn là đề xuất; chưa kiểm chứng vận hành tại quán. [Phạm vi](docs/PRODUCT.md) · [Quyết định](docs/DECISIONS.md) · [Trạng thái thực tế](docs/STATUS.md).
 
@@ -41,7 +41,7 @@ Mở [đăng nhập](http://127.0.0.1:8080/#login). Menu vẫn xem công khai, s
 
 | Tài khoản demo | Mật khẩu tại `.env` local | Sau đăng nhập |
 | --- | --- | --- |
-| `nhanvien` | Giá trị `DEMO_STAFF_PASSWORD` | Sơ đồ 30 bàn (chỉ xem) |
+| `nhanvien` | Giá trị `DEMO_STAFF_PASSWORD` | Sơ đồ 30 bàn, mở/xem phiên |
 | `bep` | Giá trị `DEMO_KITCHEN_PASSWORD` | Khu vực bếp (chưa có hàng đợi) |
 
 Mật khẩu được sinh riêng trên máy, không có mật khẩu chung trong Git. Mở `.env` tại root để sao chép; không chia sẻ file này. Chỉ profile demo seed hai tài khoản bằng Flyway, lưu BCrypt ở PostgreSQL; restart không reset. Sửa mật khẩu trong `.env` sau seed không thay mật khẩu tài khoản đã có; chưa có giao diện reset/quản trị (6.10).
@@ -53,6 +53,31 @@ Mật khẩu được sinh riêng trên máy, không có mật khẩu chung tron
 5. Phiên hết sau 30 phút không có request dùng phiên. Để thử nhanh: dừng preview, đặt `$env:STAFF_SESSION_TIMEOUT='1m'`, khởi động preview lại, đăng nhập rồi chờ hơn 1 phút không tải dữ liệu; bấm Làm mới → yêu cầu đăng nhập lại. Dừng preview, `Remove-Item Env:STAFF_SESSION_TIMEOUT`, chạy preview lại để trả mặc định. Restart server cũng buộc đăng nhập lại.
 
 Đăng xuất cần kết nối server; nếu báo chưa xác nhận được, nối lại rồi bấm Đăng xuất lần nữa. Cookie HttpOnly/SameSite Strict, CSRF áp dụng cả login/logout; HTTP localhost dùng `Secure=false`. Chưa mở LAN; trước dùng thật cần HTTPS và `SESSION_COOKIE_SECURE=true` theo ARCHITECTURE/OPERATIONS.
+
+## Tự thử danh sách bàn và mở phiên — bước 6.3
+
+Mở [sơ đồ bàn](http://127.0.0.1:8080/#tables), đăng nhập `nhanvien`; mật khẩu là `DEMO_STAFF_PASSWORD` trong `.env` local tại root. Tài khoản và volume cũ được giữ nguyên.
+
+1. Kiểm tra 30 bàn B01–B30, lọc Khu A/B; tổng quan có Bàn trống, Đang phục vụ và Chờ dọn.
+2. Chọn **Mở bàn B01** → kiểm tra khu **Chi tiết B01** → bấm **Mở phiên B01**. B01 chuyển Đang phục vụ; chi tiết có mã phiên, người mở và thời gian; B02 không đổi.
+3. F5 rồi chọn **Xem bàn B01**: vẫn cùng phiên, không còn nút mở. Muốn kiểm tra trực tiếp lỗi mở lại: tại DevTools Console của cửa sổ nhân viên chạy đoạn dưới, kết quả phải là `409` và `TABLE_NOT_AVAILABLE`:
+
+```javascript
+const csrf = await (await fetch('/api/auth/csrf')).json();
+const snapshot = await (await fetch('/api/tables')).json();
+const table = snapshot.tables.find(t => t.code === 'B01');
+const response = await fetch(`/api/tables/${table.id}/sessions`, {
+  method: 'POST', headers: { [csrf.headerName]: csrf.token }
+});
+console.log(response.status, await response.json());
+```
+
+4. Thử đồng thời bằng hai cửa sổ/profile đã đăng nhập nhân viên, cùng chọn một bàn trống khác trước khi bấm Mở phiên. Một bên mở thành công, bên còn lại báo không thể mở thêm và đọc được phiên hiện tại. Kiểm tra tự động backend dùng hai tài khoản khác nhau, năm lượt tranh chấp trên PostgreSQL biệt lập.
+5. Dừng/chạy preview theo mục dưới, đăng nhập lại và xem B01: cùng mã phiên/người/thời gian. Có thể dừng/chạy database bằng `dev.ps1 stop/db` với volume cũ. Restart làm mất **phiên đăng nhập**, không mất **phiên phục vụ**.
+6. Đăng nhập `bep` ở cửa sổ riêng: không vào được bàn hoặc POST mở bàn (403 dù có CSRF); chưa đăng nhập là 401. Menu vẫn công khai.
+7. Khi đang xem bàn, bật Offline trong DevTools rồi Làm mới để thấy cảnh báo snapshot cũ và khóa mở. Nếu mất phản hồi lúc gửi, UI báo chưa xác định; nối lại rồi **Kiểm tra trạng thái B01** trước thao tác tiếp. Ứng dụng không tự gửi lại POST.
+
+Chỉ mở bàn bạn muốn giữ có khách để thử: bước 6.3 chưa có đóng phiên/dọn bàn/reset dữ liệu. Không xóa volume để đưa bàn về trống. Bàn chờ dọn được hiển thị và chặn mở; chưa có thao tác chuyển về trống. Gắn tablet và khách gửi món là bước **6.4**. Hiện chỉ dùng trình duyệt trên máy này tại localhost, chưa cần thao tác trên tablet thật.
 
 ## Dừng và chạy lại
 
@@ -126,15 +151,16 @@ Pop-Location
 
 ## Cấu trúc và dữ liệu
 
-- `backend/`: package `com.restaurant.order`; identity dùng Spring Security/PostgreSQL, API chỉ đọc `GET /api/menu` public, `GET /api/tables` yêu cầu STAFF, `GET /api/kitchen/workspace` yêu cầu KITCHEN; health kiểm tra database. Lỗi truy cập dữ liệu trả HTTP 503 với thông báo chung, không trả credential/stack trace.
+- `backend/`: package `com.restaurant.order`; identity dùng Spring Security/PostgreSQL, `GET /api/menu` public; `GET /api/tables`, `GET /api/tables/{id}` và `POST /api/tables/{id}/sessions` yêu cầu STAFF (POST có CSRF); `GET /api/kitchen/workspace` yêu cầu KITCHEN; health kiểm tra database. Lỗi truy cập dữ liệu trả HTTP 503 với thông báo chung, không trả credential/stack trace.
 - `frontend/`: UI tiếng Việt, font/ảnh biểu tượng local, không cần CDN. Dữ liệu cũ khi tải lại thất bại được đánh dấu có thể đã thay đổi; lần tải đầu lỗi không hiện bàn giả.
 - `infra/compose.yaml`: PostgreSQL khóa phiên bản/digest, volume bền vững và healthcheck.
 - `backend/src/main/resources/db/migration/V1__create_restaurant_tables.sql`: schema do Flyway quản lý; Hibernate chỉ validate.
 - `backend/src/main/resources/db/demo/R__demo_tables.sql`: seed B01–B30, hai khu, 4 chỗ/bàn; chỉ chạy với profile `demo` trong `.env` local. Profile mặc định tạo schema, không seed. Chạy lại không reset trạng thái bàn đã có.
 - `backend/src/main/resources/db/migration/V2__create_menu.sql`: schema nhóm/món; `db/demo/R__demo_menu.sql` thêm menu mẫu chỉ profile demo, không ghi đè bản ghi đã tồn tại. Ảnh SVG trong `frontend/public/menu-images/`, đường dẫn lưu trong database. API đọc mọi món kể cả hết món, không có chức năng sửa/gửi món.
 - `backend/src/main/resources/db/migration/V3__create_staff_users.sql`: schema tài khoản; Java migration `identity/R__demo_staff.java` chỉ profile demo, lấy mật khẩu từ môi trường rồi băm trước khi INSERT, không ghi đè tài khoản có sẵn.
+- `backend/src/main/resources/db/migration/V4__create_table_sessions.sql`: phiên phục vụ riêng bàn vật lý, người/thời gian mở, khóa ngoại và unique index giới hạn một phiên hoạt động/bàn. Mở phiên dùng transaction + row lock, không cần sửa seed 30 bàn cũ.
 - `scripts/`: lệnh Windows; `.github/workflows/ci.yml`: cấu hình build/test trên GitHub; kết quả chạy thực tế ghi trong STATUS.
 
 Repository: [Davth325/restaurant-order](https://github.com/Davth325/restaurant-order), nhánh `main`. Tag `v0.1.0-m1` dùng để đánh dấu bộ khung M1 đầu tiên. Không commit `.env`, dependency đã cài, log hay dữ liệu PostgreSQL. Kết quả lưu phiên bản và kiểm tra GitHub ở [STATUS](docs/STATUS.md).
 
-Tài liệu nghiệp vụ: [DOMAIN](docs/DOMAIN.md), [TESTING](docs/TESTING.md), [ARCHITECTURE](docs/ARCHITECTURE.md), [OPERATIONS](docs/OPERATIONS.md). Kế hoạch [M1](docs/tasks/M1-SCAFFOLD.md); đăng nhập 6.2 và menu mẫu chưa hoàn thành toàn bộ M2. Người dùng đã thử đăng nhập thành công và giao chốt; kết quả commit/push/CI duy trì ở STATUS. Bước tiếp là 6.3 — danh sách bàn và mở phiên phục vụ.
+Tài liệu nghiệp vụ: [DOMAIN](docs/DOMAIN.md), [TESTING](docs/TESTING.md), [ARCHITECTURE](docs/ARCHITECTURE.md), [OPERATIONS](docs/OPERATIONS.md). Kế hoạch [M1](docs/tasks/M1-SCAFFOLD.md); mở phiên 6.3 và sửa thanh bên laptop đã được người dùng thử OK ngày 31/10/2026, chưa hoàn thành toàn bộ M2. Kết quả thực chạy và trạng thái commit/push/CI duy trì ở STATUS. Bước tiếp là 6.4 — gắn tablet và khách gửi món.

@@ -40,4 +40,4 @@
 - Kiểm tra Windows: `.\scripts\dev.ps1 test` khi UI/API đang chạy và Chromium đã cài. Lệnh này chạy Gradle test với PostgreSQL/Testcontainers riêng, typecheck/lint và Playwright.
 - Backend riêng: dot-source `.\scripts\Use-Java21.ps1` tại root, vào backend rồi dùng `.\gradlew.bat`. Frontend riêng: vào frontend, `npm.cmd ci`, `npm.cmd run typecheck`, `npm.cmd run lint`, `npm.cmd run build`, `npm.cmd run test:e2e`.
 - CI Linux cấu hình `bash ./gradlew --no-daemon clean build` tại backend sau build frontend; đọc STATUS và kết quả GitHub Actions thực tế. Không ghi CI pass chỉ từ file workflow.
-- Xem README cho thứ tự khởi động/dừng; xem STATUS cho bằng chứng và hạn chế. Sau 6.2 API bàn chỉ đọc yêu cầu STAFF, bếp yêu cầu KITCHEN; vẫn bind localhost, chưa có phiên bàn/HTTPS để mở LAN.
+- Xem README cho thứ tự khởi động/dừng; xem STATUS cho bằng chứng và hạn chế. Sau 6.3 API bàn và mở/xem phiên yêu cầu STAFF + CSRF cho POST, bếp yêu cầu KITCHEN; vẫn bind localhost, chưa có ghép tablet/HTTPS để mở LAN.

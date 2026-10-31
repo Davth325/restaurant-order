@@ -1,6 +1,6 @@
 # Kiểm thử và điều kiện nghiệm thu
 
-Hiện có integration test PostgreSQL/Testcontainers và E2E Chromium cho schema, seed, menu/bàn và đăng nhập/phân quyền 6.2. Kết quả thực tế ở STATUS, cách chạy ở README. Các mục ghi “giai đoạn sau” cùng kịch bản gọi món/tiền/mạng chưa triển khai vẫn là yêu cầu, không được coi là đã kiểm tra.
+Hiện có integration test PostgreSQL/Testcontainers và E2E Chromium cho schema, seed, menu/bàn, đăng nhập/phân quyền 6.2 và mở phiên 6.3. Kết quả thực tế ở STATUS, cách chạy ở README. Các mục ghi “giai đoạn sau” cùng kịch bản gọi món/tiền/mạng chưa triển khai vẫn là yêu cầu, không được coi là đã kiểm tra.
 
 ## Kiểm tra bộ khung M1
 
@@ -29,6 +29,17 @@ Hiện có integration test PostgreSQL/Testcontainers và E2E Chromium cho schem
 - Tài khoản E2E đọc từ biến môi trường hoặc `.env` bị Git ignore; không dùng credential chung viết cứng. Không đưa báo cáo/trace local vào Git.
 - Thay đổi kỳ vọng mutation menu anonymous: trước Security là 405; nay không CSRF là 403. POST bàn của nhân viên có CSRF hợp lệ vẫn 405 vì chưa có API ghi.
 - Cách chạy và số test/kết quả thực tế ở README/STATUS. Chưa thay thế Safari/iPad thật, LAN/HTTPS và kiểm tra vận hành tại quán.
+
+## Bàn và mở phiên — 6.3
+
+- Hồi quy thanh bên `sidebar.spec.ts`: 1366×600, 1280×630, 1024×500, 853×420 giữ điều hướng và nút Đăng xuất ≥44px trong vùng nhìn kể cả sau cuộn nội dung; 1024×240 có thể cuộn/focus và đăng xuất bằng bàn phím; mobile 375×812 không bị header chiếm hết màn hình hoặc tràn ngang. Trước sửa có hai test thất bại đúng lỗi cắt thanh bên; kết quả sau sửa ghi ở STATUS.
+
+- `TableSessionIntegrationTests`: HTTP/cookie/CSRF thật với PostgreSQL/Testcontainers; B01 mở 201 có actor/time từ server (bỏ qua actor/time giả do client gửi), B02 giữ nguyên, mở lại 409 rõ mã lỗi. GET danh sách/chi tiết cùng phiên, login mới và chạy lại seed/Flyway không nhân đôi/reset. Không sửa migration cũ để test đạt.
+- Hai tài khoản STAFF riêng mở đồng thời bằng hai HTTP session, lặp năm bàn: giữ row lock bằng connection riêng, đối chiếu `pg_stat_activity` để xác nhận cả hai transaction đang chờ khóa rồi mới thả; mỗi lượt đúng một 201 và một 409, đúng một bản ghi phiên. Test unique index trực tiếp chặn phiên thứ hai cả khi phiên đầu `CHECKOUT_PENDING`, giữ lịch sử `CLOSED` và trả đúng lượt hiện tại.
+- Anonymous 401/bếp 403 khi có CSRF hợp lệ; thiếu CSRF 403; bàn không tồn tại 404/chờ dọn 409; dữ liệu lệch AVAILABLE nhưng có phiên hoạt động cũng bị chặn. Lỗi insert sau update bàn phải rollback, API trả 503 không lộ SQL/credential.
+- `table-sessions.spec.ts`: login thật, mô phỏng response đọc/mở bàn cho UI xác nhận đúng B01/B02, actor/time/phiên, reload, xung đột 409, mất phản hồi không POST lại, khóa double-click, lỗi đọc trạng thái, phiên login hết hạn, cảnh báo snapshot cũ khi thử lại, chờ dọn và bố cục tablet/mobile. Không coi các mock này là bằng chứng transaction/database; bằng chứng đó thuộc test backend và kiểm tra live riêng ghi ở STATUS.
+- E2E menu/bàn/auth cũ vẫn chạy API thật. Test UI mới không tiêu thụ bàn trống hoặc xóa phiên trên volume demo. Kiểm tra live UI → API → database và restart dùng database kiểm thử riêng, giữ B01 demo trống cho chủ dự án thử.
+- Tự thử theo README. Chưa có API đóng/dọn nên không dùng xóa session/reset volume demo làm bước nghiệm thu. Kết quả/lệnh đã chạy thực tế và giới hạn thiết bị/CI ghi ở STATUS.
 
 ## Luồng chính (giai đoạn sau)
 

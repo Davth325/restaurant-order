@@ -31,7 +31,4 @@ public class RestaurantTable {
 
     protected RestaurantTable() { }
 
-    public TableView toView() {
-        return new TableView(id, code, displayName, area, seats, status);
-    }
 }

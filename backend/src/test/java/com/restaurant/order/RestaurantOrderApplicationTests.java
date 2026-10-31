@@ -45,7 +45,7 @@ class RestaurantOrderApplicationTests {
 		assertThat(response.getBody().tables().getLast().code()).isEqualTo("B30");
 		assertThat(response.getBody().observedAt()).isNotNull();
 		assertThat(jdbc.queryForObject("SELECT count(*) FROM flyway_schema_history WHERE success", Integer.class))
-				.isEqualTo(6);
+				.isEqualTo(7);
 	}
 
 	@Test

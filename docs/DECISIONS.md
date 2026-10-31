@@ -9,7 +9,7 @@
 | D005 | Đã xác nhận | Java 21 | Chủ dự án yêu cầu thực hiện M1 với Java 21 ngày 29/10/2026; dùng cho compile/test/runtime, giữ JDK 17 trên máy. |
 | D006 | Đã xác nhận | React + TypeScript + Vite | Chủ dự án yêu cầu đủ ba công nghệ khi thực hiện M1 ngày 29/10/2026. |
 | D007 | Đề xuất | Server và PostgreSQL tại quán | Mất WAN vẫn dùng được nếu LAN/server còn hoạt động. |
-| D008 | Đề xuất | Một phiên cho một lượt khách, không dùng tài khoản bàn cố định | Cách ly lượt khách và thu hồi quyền tablet. |
+| D008 | Đã xác nhận trong yêu cầu 6.3 — 31/10/2026 | Tách bàn vật lý khỏi phiên từng lượt khách | Theo yêu cầu chủ dự án bước 6.3; gắn tablet/credential khách để 6.4, chưa chốt chi tiết cơ chế ghép. |
 | D009 | Đề xuất | Nhân viên thấy món xong trực tiếp | Giảm việc quản lý phải chuyển tiếp mọi thông báo. |
 | D010 | Đề xuất | Một bill thanh toán toàn bộ một lần | Giới hạn độ phức tạp demo; cần xác nhận lại trước dùng thật. |
 | D011 | Đề xuất | Không đồng bộ ghi độc lập trên mọi tablet ở MVP | Dùng máy chủ local giải quyết mất Internet; sự cố LAN/server có quy trình thủ công. |
@@ -22,6 +22,7 @@
 | D018 | Đã triển khai trong M1 | API bàn chỉ đọc, bind localhost; seed tách profile demo; UI trong jar khi đóng gói | Có lát cắt UI → API → PostgreSQL mà chưa cấp quyền phiên giả. Giữ Vite proxy cho phát triển; trước mở LAN phải có phân quyền M2. |
 | D019 | Đã triển khai menu mẫu — 30/10/2026 | Menu từ PostgreSQL qua API chỉ đọc; seed riêng demo, ảnh SVG local, giá mẫu VND nguyên đồng; trang chủ mở menu | Theo yêu cầu menu mẫu của chủ dự án. Codex chọn mặc định kỹ thuật để thử xuyên suốt UI/API/database và không cần dịch vụ ảnh ngoài; không chốt menu thật, thuế/phí, option hoặc quyền gửi món. Chi tiết nghiệp vụ ở DOMAIN, kỹ thuật ở ARCHITECTURE. |
 | D020 | Đã triển khai bước 6.2 — 30/10/2026 | Spring Security, tài khoản PostgreSQL/BCrypt, session server + CSRF; STAFF/KITCHEN tách quyền; GET menu công khai | Theo yêu cầu đăng nhập nhân viên/bếp của chủ dự án. Codex chọn cookie HttpOnly/SameSite Strict, timeout 30 phút không request, mật khẩu demo ngẫu nhiên ngoài Git và Java migration Flyway. Menu giữ quyền xem hiện tại; không cần MANAGER trước module quản trị. HTTP/Secure=false chỉ localhost; HTTPS/LAN chưa chốt theo D014. Chi tiết quyền ở DOMAIN, triển khai ở ARCHITECTURE. |
+| D021 | Đã triển khai bước 6.3 — 31/10/2026 | STAFF mở phiên bằng transaction/row lock bàn + partial unique index phiên hoạt động; lưu actor/time tại server; mở lại trả 409 | Theo nghiệm thu chủ dự án về hai nhân viên mở đồng thời và dữ liệu bền vững. Codex chọn JDBC join để trả cùng snapshot bàn/phiên, V4 không sửa migration/seed cũ; chưa cần cơ chế idempotency trả lại thành công vì yêu cầu mở lại phải bị từ chối. UI tra trạng thái khi kết quả chưa rõ. Không mở rộng đóng/dọn/ghép tablet hoặc thanh toán; DOMAIN/ARCHITECTURE mô tả chi tiết. |
 
 Khi thay đổi: thêm ngày, người chốt, lý do, phần bị ảnh hưởng, quyết định cũ được thay thế. Không biến đề xuất thành “đã xác nhận” chỉ vì Codex đã bắt đầu code.
 
