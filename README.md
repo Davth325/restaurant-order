@@ -1,6 +1,6 @@
 # Ứng dụng gọi món nhà hàng
 
-Bộ khung M1, menu mẫu, đăng nhập 6.2 và mở phiên bàn 6.3: Java 21 + Spring Boot + Gradle Wrapper, React + TypeScript + Vite, PostgreSQL + Flyway + Spring Security. Giao diện đọc **menu và 30 bàn demo từ database thật**, có bộ lọc, tải lại và thông báo khi mất kết nối. Nhân viên/bếp có tài khoản riêng và kiểm tra quyền tại backend. Nhân viên mở/xem phiên phục vụ, lưu người/thời gian và chặn mở trùng kể cả đồng thời. Chưa có gắn tablet, gọi món, đóng/dọn bàn, hàng đợi bếp hoặc thu tiền.
+Bộ khung M1 tới bước **6.4 — tablet khách và gửi món**: Java 21 + Spring Boot + Gradle Wrapper, React + TypeScript + Vite, PostgreSQL + Flyway + Spring Security. Menu/30 bàn/phiên/đợt gọi lấy từ database thật. Nhân viên mở phiên và tạo mã ghép tablet; khách có quyền riêng, chọn và xem lại món, gửi đợt gọi chống trùng, xem món đã gọi sau reload. Chưa có đóng/dọn bàn, màn hình hàng đợi bếp hoặc thu tiền.
 
 Phạm vi sản phẩm giữ nguyên: demo 30 bàn, một bếp, QR do nhân viên kiểm tra và xác nhận. Kiến trúc máy chủ tại quán chạy qua LAN khi mất Internet vẫn là đề xuất; chưa kiểm chứng vận hành tại quán. [Phạm vi](docs/PRODUCT.md) · [Quyết định](docs/DECISIONS.md) · [Trạng thái thực tế](docs/STATUS.md).
 
@@ -77,7 +77,27 @@ console.log(response.status, await response.json());
 6. Đăng nhập `bep` ở cửa sổ riêng: không vào được bàn hoặc POST mở bàn (403 dù có CSRF); chưa đăng nhập là 401. Menu vẫn công khai.
 7. Khi đang xem bàn, bật Offline trong DevTools rồi Làm mới để thấy cảnh báo snapshot cũ và khóa mở. Nếu mất phản hồi lúc gửi, UI báo chưa xác định; nối lại rồi **Kiểm tra trạng thái B01** trước thao tác tiếp. Ứng dụng không tự gửi lại POST.
 
-Chỉ mở bàn bạn muốn giữ có khách để thử: bước 6.3 chưa có đóng phiên/dọn bàn/reset dữ liệu. Không xóa volume để đưa bàn về trống. Bàn chờ dọn được hiển thị và chặn mở; chưa có thao tác chuyển về trống. Gắn tablet và khách gửi món là bước **6.4**. Hiện chỉ dùng trình duyệt trên máy này tại localhost, chưa cần thao tác trên tablet thật.
+Chỉ mở bàn bạn muốn giữ có khách để thử: chưa có đóng phiên/dọn bàn/reset dữ liệu. Không xóa volume để đưa bàn về trống. Bàn chờ dọn được hiển thị và chặn mở; chưa có thao tác chuyển về trống. Gắn tablet/gửi món theo mục 6.4 bên dưới. Hiện chỉ dùng trình duyệt trên máy này tại localhost, chưa cần thao tác trên tablet thật.
+
+## Tự thử tablet khách và gửi món — bước 6.4
+
+1. Mở [sơ đồ bàn](http://127.0.0.1:8080/#tables), đăng nhập `nhanvien` với `DEMO_STAFF_PASSWORD` trong `.env` local tại root. Chọn một bàn đang phục vụ hoặc mở phiên bàn trống; bấm **Tạo mã gắn tablet Bxx**. Mã dùng một lần trong 5 phút; tạo lại sẽ thay mã chưa dùng trước. Giữ mã trong phạm vi thiết bị khách, không đăng lên Git/chat/log.
+2. Mở **cửa sổ ẩn danh hoặc profile trình duyệt khác**, tới [tablet khách](http://127.0.0.1:8080/#guest), nhập mã rồi Gắn tablet. Kiểm tra mã bàn và mã phiên trên đầu trang trước khi giao khách. Tab/cửa sổ thường cùng profile vẫn chia sẻ cookie nhân viên và sẽ bị chặn gắn; không giao phiên nhân viên cho khách.
+3. Thêm Gỏi cuốn tôm, sửa số lượng thành 2, ghi chú; bấm **Xem lại đợt gọi** → kiểm tra tạm tính → **Xác nhận gửi món**. Danh sách Món đã gọi từ hệ thống hiển thị đợt, số lượng, ghi chú và Chờ bếp. F5 vẫn còn đơn; thêm món khác để tạo đợt tiếp theo. Giỏ chưa gửi chỉ giữ trong bộ nhớ; riêng lượt đã bấm gửi chưa rõ kết quả được giữ trên máy tới khi kiểm tra xong.
+4. Bật Offline lúc gửi để thử mất kết nối. Giỏ khóa và giữ khóa gửi, UI tra lại kết quả. Nối lại, bấm **Kiểm tra và thử gửi lại**: luôn tra trước và dùng cùng khóa nếu cần POST lại. Reload lúc chưa xác định cũng giữ lượt gửi. Không xóa dữ liệu trình duyệt trong lúc này. Không tự tạo đợt mới để thay một đợt chưa rõ kết quả.
+5. Để thử bàn thứ hai, tạo mã cho Bxx khác, mở **profile khác nữa hoặc trình duyệt khác**. Hai cửa sổ ẩn danh của cùng trình duyệt thường chia sẻ cookie, không đại diện hai tablet độc lập. Dùng hai phiên thật khác nhau rồi đối chiếu món mỗi bàn. Cookie khách không có quyền API nhân viên/bếp.
+6. Menu mẫu chưa có tùy chọn; backend từ chối `optionIds` khác rỗng. Mỗi dòng 1–20 suất, ghi chú tối đa 300 ký tự, tối đa 30 dòng/đợt. Giá/tổng lấy từ server; giá đổi hoặc món hết trả lỗi và không lưu một phần. Dùng **Cập nhật giá giỏ**, sửa/xóa món cần thiết rồi xem lại trước khi gửi. Không có giao diện quản trị giá/hết món trong bước này.
+
+Kiểm tra kỹ thuật giá giả, sửa ID phiên, lặp khóa và đồng thời nằm trong `GuestOrderIntegrationTests`. Để tự chạy luồng UI/API/database thật mà không tạo món thử vào volume demo:
+
+```powershell
+# Sau dev.ps1 db và dev.ps1 build; cần Chromium đã cài và cổng 8081 trống.
+.\scripts\Verify-GuestOrdering.ps1
+```
+
+Script tạo database `verify_guest_<guid>` riêng, mở hai bàn/tablet, thử mất phản hồi/reload, restart jar và đối chiếu đúng 3 đợt/210.000đ trong database đó, sau đó dọn đúng database tạm. Không reset bàn/đơn demo. Bằng chứng và giới hạn ở STATUS. Quyền tablet có thời hạn tuyệt đối 12 giờ, tồn tại qua restart server, và bị từ chối ngay khi phiên bàn đóng ở backend; chưa có UI đóng phiên trong 6.4.
+
+Chưa mở LAN/HTTPS nên **không cần tablet thật để nghiệm thu local**. Không dùng địa chỉ `127.0.0.1` trên tablet khác máy, vì nó trỏ về chính tablet. Thử tablet thật cần bước cấu hình LAN/HTTPS tin cậy và cookie Secure theo OPERATIONS, chưa nằm trong lần bàn giao này. Tiếp theo: **6.5 — màn hình bếp**.
 
 ## Dừng và chạy lại
 
@@ -159,8 +179,9 @@ Pop-Location
 - `backend/src/main/resources/db/migration/V2__create_menu.sql`: schema nhóm/món; `db/demo/R__demo_menu.sql` thêm menu mẫu chỉ profile demo, không ghi đè bản ghi đã tồn tại. Ảnh SVG trong `frontend/public/menu-images/`, đường dẫn lưu trong database. API đọc mọi món kể cả hết món, không có chức năng sửa/gửi món.
 - `backend/src/main/resources/db/migration/V3__create_staff_users.sql`: schema tài khoản; Java migration `identity/R__demo_staff.java` chỉ profile demo, lấy mật khẩu từ môi trường rồi băm trước khi INSERT, không ghi đè tài khoản có sẵn.
 - `backend/src/main/resources/db/migration/V4__create_table_sessions.sql`: phiên phục vụ riêng bàn vật lý, người/thời gian mở, khóa ngoại và unique index giới hạn một phiên hoạt động/bàn. Mở phiên dùng transaction + row lock, không cần sửa seed 30 bàn cũ.
+- `backend/src/main/resources/db/migration/V5__guest_devices_and_orders.sql`: mã ghép/credential khách chỉ lưu SHA-256, đợt/dòng món và snapshot giá; unique khóa gửi theo phiên. Module `ordering` kiểm tra quyền phiên/giá/số lượng và xử lý chống trùng; hợp đồng API ở ARCHITECTURE.
 - `scripts/`: lệnh Windows; `.github/workflows/ci.yml`: cấu hình build/test trên GitHub; kết quả chạy thực tế ghi trong STATUS.
 
 Repository: [Davth325/restaurant-order](https://github.com/Davth325/restaurant-order), nhánh `main`. Tag `v0.1.0-m1` dùng để đánh dấu bộ khung M1 đầu tiên. Không commit `.env`, dependency đã cài, log hay dữ liệu PostgreSQL. Kết quả lưu phiên bản và kiểm tra GitHub ở [STATUS](docs/STATUS.md).
 
-Tài liệu nghiệp vụ: [DOMAIN](docs/DOMAIN.md), [TESTING](docs/TESTING.md), [ARCHITECTURE](docs/ARCHITECTURE.md), [OPERATIONS](docs/OPERATIONS.md). Kế hoạch [M1](docs/tasks/M1-SCAFFOLD.md); mở phiên 6.3 và sửa thanh bên laptop đã được người dùng thử OK ngày 31/10/2026, chưa hoàn thành toàn bộ M2. Kết quả thực chạy và trạng thái commit/push/CI duy trì ở STATUS. Bước tiếp là 6.4 — gắn tablet và khách gửi món.
+Tài liệu nghiệp vụ: [DOMAIN](docs/DOMAIN.md), [TESTING](docs/TESTING.md), [ARCHITECTURE](docs/ARCHITECTURE.md), [OPERATIONS](docs/OPERATIONS.md). Kế hoạch [M1](docs/tasks/M1-SCAFFOLD.md); 6.3 đã được người dùng thử OK; 6.4 sẵn sàng thử local, chưa hoàn thành toàn bộ M2. Kết quả thực chạy và trạng thái commit/push/CI duy trì ở STATUS. Bước tiếp là **6.5 — màn hình bếp**.

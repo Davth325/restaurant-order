@@ -40,4 +40,5 @@
 - Kiểm tra Windows: `.\scripts\dev.ps1 test` khi UI/API đang chạy và Chromium đã cài. Lệnh này chạy Gradle test với PostgreSQL/Testcontainers riêng, typecheck/lint và Playwright.
 - Backend riêng: dot-source `.\scripts\Use-Java21.ps1` tại root, vào backend rồi dùng `.\gradlew.bat`. Frontend riêng: vào frontend, `npm.cmd ci`, `npm.cmd run typecheck`, `npm.cmd run lint`, `npm.cmd run build`, `npm.cmd run test:e2e`.
 - CI Linux cấu hình `bash ./gradlew --no-daemon clean build` tại backend sau build frontend; đọc STATUS và kết quả GitHub Actions thực tế. Không ghi CI pass chỉ từ file workflow.
-- Xem README cho thứ tự khởi động/dừng; xem STATUS cho bằng chứng và hạn chế. Sau 6.3 API bàn và mở/xem phiên yêu cầu STAFF + CSRF cho POST, bếp yêu cầu KITCHEN; vẫn bind localhost, chưa có ghép tablet/HTTPS để mở LAN.
+- Xem README cho thứ tự khởi động/dừng; xem STATUS cho bằng chứng và hạn chế. API bàn/mã ghép cần STAFF, bếp cần KITCHEN, POST có CSRF. Sau 6.4 khách dùng cookie riêng có hash ở database và chỉ truy cập phiên được gắn; vẫn bind localhost, chưa có HTTPS để mở LAN.
+- Kiểm tra live 6.4: `.\scripts\Verify-GuestOrdering.ps1` sau build/db, Chromium đã cài, cổng 8081 trống; script dùng database tạm riêng, không tiêu thụ bàn/đơn demo. Test UI thường mô phỏng guest để kiểm tra trạng thái lỗi, không coi mock là bằng chứng database.

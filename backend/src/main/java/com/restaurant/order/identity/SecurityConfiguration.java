@@ -21,6 +21,9 @@ public class SecurityConfiguration {
                         .requestMatchers(HttpMethod.GET, "/", "/index.html", "/assets/**", "/menu-images/**", "/favicon.svg", "/favicon.ico",
                                 "/actuator/health", "/api/menu", "/api/auth/csrf").permitAll()
                         .requestMatchers("/api/auth/login").permitAll()
+                        // Guest endpoints validate a separate DB-backed device credential on every request.
+                        // CSRF remains enabled, including pairing and submitting orders.
+                        .requestMatchers("/api/guest/**").permitAll()
                         .requestMatchers(HttpMethod.GET, "/api/auth/me").authenticated()
                         .requestMatchers("/api/tables", "/api/tables/**", "/api/staff/**").hasRole("STAFF")
                         .requestMatchers("/api/kitchen/**").hasRole("KITCHEN")

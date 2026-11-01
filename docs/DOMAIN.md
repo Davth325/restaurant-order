@@ -28,7 +28,19 @@ Các quy tắc dưới đây là thiết kế đề xuất cho bản đầu, tr�
 - Món hết vẫn xuất hiện với nhãn “Hết món”. Nhóm/món sắp theo thứ tự cấu hình, rồi ID. Nhóm trống được trả về; menu không có món là kết quả hợp lệ.
 - Seed chỉ profile `demo`, tạo mẫu tổng hợp; chạy lại bỏ qua mã đã tồn tại, không ghi đè giá/tên/trạng thái đã sửa. Ảnh SVG minh họa đóng gói local, đường dẫn được lưu trong database.
 - UI đọc lại API khi mở/tải lại trang, vào lại mục thực đơn hoặc bấm Làm mới. Không tạo danh sách món giả khi lỗi; snapshot cũ phải có cảnh báo giá/tình trạng có thể đã đổi. Chưa tự cập nhật realtime.
-- API chỉ đọc; chưa có quản trị menu hoặc gửi món. Các luật kiểm tra giá/khả năng bán lúc gửi bên dưới vẫn thuộc giai đoạn gọi món.
+- API menu chỉ đọc, chưa có quản trị menu. Gửi món và luật kiểm tra giá/khả năng bán đã bổ sung ở mục 6.4 bên dưới.
+
+## Tablet khách và gửi món đã triển khai — 6.4, 31/10/2026
+
+- Nhân viên đang có quyền STAFF tạo mã ghép cho phiên OPEN; mã dùng một lần, hết hạn 5 phút. Tạo mã mới vô hiệu mã chưa dùng trước đó của cùng phiên. Khách nhập mã trên trình duyệt riêng; server từ chối ghép nếu trình duyệt còn đăng nhập nội bộ. Không dùng tài khoản nhân viên làm quyền gọi món khách.
+- Thiết bị nhận credential riêng, chỉ cho một TableSession, hiệu lực tuyệt đối 12 giờ. Mỗi request kiểm tra credential và trạng thái phiên tại server; sửa ID phiên không có quyền sang bàn khác. CLOSED chặn cả xem và gửi; CHECKOUT_PENDING còn xem/lấy lại kết quả đã nhận nhưng không tạo đợt mới. Việc đóng phiên/checkout vẫn chưa có UI/API trong 6.4.
+- Demo cho phép nhiều thiết bị được nhân viên cấp mã riêng cùng một phiên; tất cả đọc đơn của phiên đó từ server (cần tải lại để thấy đợt từ thiết bị khác). Người dùng chọn giữ hành vi này khi chốt bản 6.4 ngày 01/11/2026. Cấp mã mới không thu hồi thiết bị đã gắn. Giới hạn một thiết bị/bàn và đổi/thu hồi thiết bị riêng chưa triển khai; chính sách thiết bị dùng thật chưa chốt. Cookie và đơn vẫn có hiệu lực sau restart server, khác phiên đăng nhập nhân viên trong RAM.
+- Giỏ gồm món, số lượng 1–20 suất/dòng, ghi chú tối đa 300 ký tự, tạm tính và bước xem lại. Tối đa 30 dòng/đợt. Đây là giới hạn demo do Codex chọn, không phải quy mô gọi món quán thật đã xác nhận. Menu hiện chưa có option; request phải có `optionIds: []`, option lạ bị từ chối. Không tự tạo buffet/combo/món theo cân, phí/thuế hoặc tùy chọn mẫu.
+- Chấp nhận toàn bộ đợt hoặc từ chối toàn bộ. Server kiểm tra món tồn tại/còn bán, option, số lượng, giá khách đã xem và phiên; giá không khớp trả `PRICE_CHANGED` có tên/giá mới, món hết trả `ITEM_UNAVAILABLE`. Không âm thầm cập nhật tiền hoặc gửi thiếu món. Khách cập nhật giá/sửa giỏ rồi xem lại trước khi gửi.
+- Tổng tiền tính bằng số nguyên tại server, không tin tổng/đơn giá chấp nhận do client khai. Snapshot tên món, đơn giá từ database, số lượng và ghi chú lưu trong OrderItem; sửa menu sau đó không đổi đơn. Tổng đợt không vượt giới hạn số nguyên JSON an toàn đã nêu ở menu. Tạm tính không phải hóa đơn/thu tiền.
+- Một lần xác nhận tạo một OrderBatch với khóa UUID do client giữ. Cùng phiên + cùng khóa + cùng nội dung trả đúng đợt cũ (kể cả menu đổi sau đó); khác nội dung trả `IDEMPOTENCY_CONFLICT`. Unique database và khóa phiên bảo vệ cả gửi đồng thời. Giá được kiểm tra dưới khóa catalog tới commit; lỗi giữa chừng rollback cả đợt/dòng.
+- Trước POST, client lưu lượt gửi/khóa vào localStorage theo phiên, không lưu credential ở đó. Timeout/mất phản hồi: khóa giỏ, tra bằng cùng khóa; chưa có mới cho retry cùng khóa/nội dung. Reload phục hồi lượt đang chờ. Chỉ bỏ lượt chờ khi nhận được đơn đã lưu hoặc lỗi nghiệp vụ chắc chắn từ chối; lỗi mạng/5xx không cấp khóa mới. Giỏ chưa bấm gửi chỉ ở bộ nhớ, không hứa giữ sau reload. Khi quyền khách hết hiệu lực, UI bỏ dữ liệu riêng và lượt chờ cũ khỏi máy.
+- Món đã gọi đọc từ PostgreSQL, có đợt/thời gian/tên/đơn giá/số lượng/ghi chú và trạng thái `QUEUED` (Chờ bếp). Khách không sửa/xóa món đã gửi. Chưa tạo FulfillmentUnit hoặc thao tác bếp/hủy/phục vụ; thuộc 6.5 và các bước sau.
 
 ## Thuật ngữ
 

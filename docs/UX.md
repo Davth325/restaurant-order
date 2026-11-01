@@ -1,6 +1,15 @@
 # Màn hình và tương tác
 
-## Menu mẫu hiện có — 30/10/2026
+## Tablet khách đã triển khai — 6.4, 31/10/2026
+
+- Nhân viên chọn bàn/phiên OPEN → Tạo mã gắn tablet; hiện mã dùng một lần, giờ hết hạn, bàn/phiên và hướng dẫn mở browser khách riêng. Đối chiếu đúng bàn trên tablet trước giao khách. Link cửa sổ mới không tự cách ly cookie; cần ẩn danh/profile/trình duyệt khác.
+- Màn hình `/#guest` riêng; browser đang đăng nhập nội bộ bị chặn ngay ở UI và backend. Chưa gắn thì nhập mã; đã gắn hiện bàn/phiên, giỏ, món đã gọi và menu có nút Thêm. Menu công khai có link Gắn tablet ở cuối, giữ bố cục sidebar 6.3.
+- Giỏ sửa số lượng/ghi chú/xóa, hiển thị giá và tạm tính; menu chưa có option nên nói rõ. Xem lại khóa sửa trước Xác nhận gửi, có Sửa giỏ để trở lại. Gửi thành công xóa giỏ, hiện đợt server và Chờ bếp. Khách không có thao tác sửa/xóa món đã gửi.
+- Lỗi giá/món hết nói rõ toàn đợt chưa gửi, giữ giỏ để sửa; Cập nhật giá giỏ rồi bắt buộc xem lại. Giỏ chưa bấm gửi mất khi reload; lượt gửi chưa rõ kết quả giữ nguyên UUID/nội dung, khóa sửa, tra lại tự động một lần rồi cho Kiểm tra và thử gửi lại. Reload không cấp khóa mới. Không coi timeout là gửi thất bại chắc chắn.
+- Món đã gọi có nút tải lại; lỗi giữ cảnh báo dữ liệu cũ, không dựng đơn giả. Quyền khách hết/phiên đóng thì bỏ dữ liệu riêng và yêu cầu gắn lại. Restart server không tự làm mất cookie khách; đóng/mở phiên qua UI chưa có trong bước này.
+- Các nút/input vùng chạm tối thiểu 44px, giỏ một cột trên điện thoại; chữ/ghi chú dài không tràn ngang. Chromium mô phỏng tablet/phone không thay thế iPad/Safari thật; bằng chứng ở STATUS.
+
+## Menu mẫu hiện có — 30/10/2026 (lịch sử trước 6.4)
 
 Mở trang chủ thấy “Thực đơn hôm nay”; điều hướng “Thực đơn” / “Sơ đồ bàn” hoạt động cả trên màn hình nhỏ. Nhóm lọc lấy từ API, mỗi thẻ hiển thị ảnh minh họa, tên, giá VND và chữ Còn bán/Hết món. Menu công khai chưa gắn quyền khách với phiên bàn; không hiển thị một bàn khách giả hoặc nút thêm/gửi chưa hoạt động.
 

@@ -1,5 +1,6 @@
 import { useCallback, useEffect, useRef, useState } from 'react'
 import { api, authPost } from './auth'
+import PairingPanel from './PairingPanel'
 
 type TableSession = {
   id: number
@@ -218,6 +219,7 @@ function TablesPage({ onUnauthorized }: { onUnauthorized: () => void }) {
               <div><dt>Người mở</dt><dd>{selected.currentSession.openedBy.displayName} ({selected.currentSession.openedBy.username})</dd></div>
               <div><dt>Thời gian mở</dt><dd>{dateTime(selected.currentSession.openedAt)}</dd></div>
             </dl>}
+            {!detailLoading && !detailError && !error && !loading && selected.currentSession?.status === 'OPEN' && <PairingPanel key={selected.currentSession.id} sessionId={selected.currentSession.id} tableCode={selected.code} onUnauthorized={onUnauthorized} />}
             {!detailLoading && !selected.currentSession && <p>{selected.status === 'AVAILABLE' ? 'Bàn trống, sẵn sàng đón lượt khách mới.' : 'Bàn chưa sẵn sàng để mở phiên mới.'}</p>}
             <div className="detail-actions">
               {selected.status === 'AVAILABLE' && !selected.currentSession && <button className="open-session" onClick={() => void openSession()} disabled={opening || detailLoading || !!detailError || uncertain || loading || error}>{opening ? 'Đang mở…' : `Mở phiên ${selected.code}`}</button>}

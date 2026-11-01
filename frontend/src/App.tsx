@@ -3,6 +3,7 @@ import MenuPage from './MenuPage'
 import TablesPage from './TablesPage'
 import LoginPage from './LoginPage'
 import KitchenPage from './KitchenPage'
+import GuestPage from './GuestPage'
 import { authPost, currentStaff, type Staff } from './auth'
 import './App.css'
 
@@ -53,7 +54,7 @@ function App() {
 
   useEffect(() => { void Promise.resolve().then(checkSession) }, [checkSession])
   useEffect(() => {
-    if (!protectedPage) return
+    if (!protectedPage && route !== '#guest') return
     const resume = () => { if (document.visibilityState === 'visible') void checkSession() }
     window.addEventListener('focus', resume)
     document.addEventListener('visibilitychange', resume)
@@ -61,7 +62,7 @@ function App() {
       window.removeEventListener('focus', resume)
       document.removeEventListener('visibilitychange', resume)
     }
-  }, [protectedPage, checkSession])
+  }, [protectedPage, route, checkSession])
 
   const loggedIn = async () => {
     version.current++
@@ -101,6 +102,13 @@ function App() {
   else if (route === '#kitchen') content = <KitchenPage onUnauthorized={expired} />
   else if (route === '#login' && staff) content = <main className="internal-page"><h1>Đã đăng nhập</h1><a className="text-link" href={home}>Về khu vực làm việc</a></main>
   else content = <MenuPage />
+
+  if (route === '#guest') {
+    if (checking) return <main><p role="status">Đang kiểm tra trình duyệt…</p></main>
+    if (sessionError) return <main><p role="alert">{sessionError}</p><button onClick={() => void checkSession()}>Thử lại</button></main>
+    if (staff) return <main><h1>Cần trình duyệt riêng cho khách</h1><p>Trình duyệt này đang đăng nhập {staff.displayName}. Mở cửa sổ ẩn danh/profile khác để gắn tablet, hoặc đăng xuất trước.</p><button className="primary-button" disabled={loggingOut} onClick={() => void logout()}>Đăng xuất</button><a className="text-link" href={home}>Về khu vực làm việc</a></main>
+    return <GuestPage />
+  }
 
   return (
     <div className="app-shell">

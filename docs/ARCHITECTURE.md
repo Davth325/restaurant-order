@@ -35,6 +35,17 @@ Stack đã xác nhận: Java Spring Boot + Gradle, React + TypeScript, PostgreSQ
 
 ## Cách triển khai
 
+### Tablet khách và ordering — 6.4
+
+- Flyway **V5** thêm guest_pairing, guest_device, order_batch, order_item; không sửa V1–V4/seed. Mã ghép và credential dùng SecureRandom 24 byte (192 bit), base64url 32 ký tự; database chỉ lưu SHA-256. Mã không nằm trong URL hoặc log. Response no-store. Thời hạn và quyền theo DOMAIN; không phụ thuộc HttpSession nhân viên.
+- Cookie `GUEST_DEVICE`: HttpOnly, SameSite Strict, Path `/api/guest`, Max-Age 12 giờ; Secure theo `server.servlet.session.cookie.secure`/`SESSION_COOKIE_SECURE`. Guest API không lấy quyền từ principal nhân viên; mọi endpoint kiểm tra hash/expiry/phiên trong service. `/api/guest/**` qua Security filter vẫn có CSRF cho POST. Ghép trên browser có principal nội bộ bị 409 `SEPARATE_BROWSER_REQUIRED`; STAFF tạo mã với CSRF và kiểm tra enabled/role trong database.
+- API: `POST /api/staff/sessions/{id}/pairing` → `{code, expiresAt, session}`; `POST /api/guest/pairing` body `{code}` → cookie + GuestSession; `GET /api/guest/session` → `{id, tableCode, tableName, status}`. Guest routes: `GET/POST /api/guest/sessions/{id}/orders`, `GET /api/guest/sessions/{id}/orders/by-key/{uuid}`. Sai phiên 403; thiếu/hết credential 401; CLOSED 403; tra khóa chưa lưu 404. Lỗi nghiệp vụ 400/409 có `code/detail`, dữ liệu lỗi 503 chung.
+- POST đơn body `{requestKey: UUID, items: [{menuItemId, quantity, expectedPriceVnd, optionIds: [], note}]}`; response Batch `{id, requestKey, createdAt, totalVnd, items: [{id, menuItemId, name, unitPriceVnd, quantity, note, status}]}`. GET danh sách trả Batch[]. Không có route guest đọc đơn chỉ bằng batch ID mà không kiểm phiên.
+- `GuestOrderService` dùng JDBC/transaction của stack hiện có. Kiểm credential → `FOR UPDATE OF s` trên TableSession → kiểm payload/hash và tìm khóa đã nhận → kiểm OPEN → khóa menu `FOR SHARE` theo ID tăng dần → tính tổng/snapshot → insert đợt/dòng → commit. Hash payload mã hóa nhị phân có độ dài ghi chú, tránh nhập nhằng ký tự phân cách. Unique `(session_id, request_key)` là bảo đảm DB bổ sung; khóa phiên dùng chung cho checkout/close tương lai, chưa triển khai chúng. Không dùng khóa bộ nhớ hoặc chỉ khóa nút UI.
+- Pairing create/redeem cũng khóa phiên trước khi thay/consume mã; consume có điều kiện chưa dùng/chưa hết hạn. Không lưu token thô trong response JSON, localStorage hoặc database. Nhiều credential riêng có thể trỏ cùng phiên theo mặc định demo ở DOMAIN. Không có API thu hồi từng thiết bị trong 6.4.
+- React `#guest` có giao diện riêng, không hiển thị sidebar nội bộ. MenuPage giữ menu công khai và hỗ trợ nút Thêm khi ở guest. Pending request được ghi localStorage **trước** POST; lỗi chưa xác định khóa giỏ, GET by-key trước retry cùng payload/UUID, phục hồi sau reload. Đơn đã gọi luôn tải server; không dùng giỏ làm bằng chứng đã nhận. POST/GET timeout 10 giây. Chưa có SSE/polling; tải lại thủ công và reload.
+- Vẫn localhost, không thêm dependency/đổi stack hoặc cấu hình LAN/HTTPS. Script `Verify-GuestOrdering.ps1` tạo DB `verify_guest_<guid>` biệt lập trên Compose hiện có, jar ở 8081 và chạy live Chromium; dọn đúng database vừa tạo, giữ preview/demo volume.
+
 ### Đăng nhập đã triển khai — 6.2
 
 - Thêm starter Spring Security do BOM Spring Boot hiện có quản lý phiên bản; không nâng stack. Module `identity` dùng `UserDetailsService` đọc PostgreSQL qua JDBC, BCrypt cost 12; `V3__create_staff_users.sql` thêm schema, không sửa V1/V2.

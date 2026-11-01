@@ -24,6 +24,6 @@ class SchemaOnlyTests {
         assertThat(jdbc.queryForObject("SELECT count(*) FROM staff_user", Integer.class)).isZero();
         assertThat(jdbc.queryForObject("SELECT count(*) FROM table_session", Integer.class)).isZero();
         assertThat(jdbc.queryForObject("SELECT count(*) FROM flyway_schema_history WHERE success", Integer.class))
-                .isEqualTo(4);
+                .isEqualTo(5);
     }
 }

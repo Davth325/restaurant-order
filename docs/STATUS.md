@@ -1,6 +1,65 @@
 # Trạng thái hiện tại
 
-Cập nhật: 31/10/2026 — bước 6.3 và sửa thanh bên laptop đã được người dùng thử OK, review, commit/push và CI Linux thành công cho đúng commit `a7aa23b`. Đã dừng preview/database local, giữ volume dữ liệu. Bước tiếp: 6.4 — gắn tablet và khách gửi món.
+## Chốt bản 6.4 đã nghiệm thu — 01/11/2026
+
+- Người dùng đã thử và chọn rõ **“Giữ bản hiện tại và chốt bàn giao”** sau giải thích B02: chốt luồng nhiều tablet cùng một phiên, không triển khai giới hạn một tablet/thay tablet. Hai đợt gọi chung phiên không phải hai bill; tải lại thủ công để đọc đủ các đợt từ thiết bị khác. Đề xuất một tablet ở mục đối chiếu bên dưới chưa được chọn, không còn là việc chặn bàn giao.
+- Review cuối code/migration/security/UI/test/script/workflow và diff về quyền, giá, sai bàn, trùng đơn và mất phản hồi: giữ nguyên code đã thử. Đối chiếu XML **28 test backend, 0 failures/errors**, Playwright `.last-run.json` passed và bằng chứng **36/36 Chromium**, live hai tablet/database riêng/restart của bản cuối bên dưới. Không chạy lại các test này ở lượt chốt chỉ để ghi thêm pass; CI sẽ kiểm tra sạch trên Linux.
+- `git fetch origin` thành công; `main` local và origin/main cùng baseline `1e01750`, 0 ahead/behind. `git diff --check` và `.work/scan-review.cjs` đạt, 117 file source + bundle/log không có secret local đã biết hoặc mẫu private key/GitHub token. `.env`, dữ liệu, cookie thử nghiệm, log/build/dependency vẫn bị ignore.
+- Đã được giao commit/push và kiểm tra CI đúng SHA mới; kết quả cụ thể sẽ bổ sung sau khi GitHub trả về. Không coi run 6.3 là bằng chứng CI 6.4. Giữ giới hạn localhost/Safari/LAN/tải/backup chưa kiểm chứng bên dưới; bước tiếp **6.5 — màn hình bếp**.
+
+## Đối chiếu phản ánh nhiều thiết bị B02 — 01/11/2026
+
+- Người dùng phản ánh tạo mã ghép nhiều lần khiến hai browser cùng gọi món ở B02 và danh sách khác nhau. Đọc code và truy vấn PostgreSQL chỉ đọc: B02 có đúng **một phiên OPEN #3**, **hai credential thiết bị còn hạn**, đợt #1 175.000đ và #2 45.000đ đều thuộc phiên #3. Truy vấn toàn bộ bàn không tìm thấy bàn có hơn một phiên hoạt động. Chưa có module bill; hai giá trị trên là tạm tính hai đợt, không phải hai bill.
+- Nguyên nhân: mặc định 6.4 cho nhiều thiết bị cùng phiên; tạo mã mới thay mã chưa dùng nhưng không thu hồi thiết bị đã ghép. UI chưa tự đồng bộ các thiết bị, nên cần Tải lại món đã gọi để thấy đủ hai đợt. Đây là khoảng trống quy trình ghép/hiển thị thiết bị cần chốt với người dùng, không phải chờ màn hình bếp để bảo vệ trùng phiên.
+- Lượt này chỉ đọc code/database, không tạo mã/đơn, không sửa dữ liệu hoặc chạy lại test; chưa thay chính sách thiết bị. Đề xuất một thiết bị hoạt động/phiên, ghép thêm bị chặn; đổi tablet là thao tác nhân viên xác nhận riêng, thu hồi quyền cũ và giữ nguyên đơn. Chờ chốt nghiệp vụ trước triển khai thay đổi đó; chưa chốt commit/push/CI 6.4.
+
+## Khởi động lại để người dùng thử — 01/11/2026
+
+- Docker Linux Engine đã hoạt động; `scripts/Stop-Preview.ps1` xác nhận preview cũ đã dừng, `scripts/dev.ps1 db` khởi động PostgreSQL healthy với volume cũ, `scripts/Start-Preview.ps1` chạy lại jar 6.4 tại http://127.0.0.1:8080. Không build lại hoặc thay code nghiệp vụ, không reset dữ liệu.
+- Kiểm tra HTTP thật: health UP, menu 6 món, đăng nhập `nhanvien` trả 204, đọc đủ 30 bàn; đã đăng xuất phiên kiểm tra. `git diff --check` đạt. Không chạy lại bộ test tự động trong lượt chỉ khởi động này; bằng chứng triển khai 6.4 bên dưới giữ nguyên phạm vi.
+- Preview/database đang chạy để người dùng thử; mật khẩu `DEMO_STAFF_PASSWORD` trong `.env` local. Ghép khách tại `/#guest` bằng browser/profile riêng. Vẫn chờ người dùng thử và giao chốt commit/push/CI; bước tiếp 6.5 chưa triển khai.
+
+Cập nhật: 31/10/2026 — **6.4 tablet khách và gửi món sẵn sàng thử local**; 28 test PostgreSQL và 36 test Chromium đạt, luồng thật hai tablet/database riêng/restart đạt. Preview/database đang chạy, giữ dữ liệu cũ. Chưa commit/push/CI 6.4, chờ người dùng thử và giao chốt. Bước tiếp: **6.5 — màn hình bếp**.
+
+## Tablet khách và gửi món — 6.4, 31/10/2026
+
+### Đã làm và phạm vi
+
+- Đọc AGENTS/README/STATUS và PRODUCT/DOMAIN/ARCHITECTURE/UX/DECISIONS/TESTING/OPERATIONS; đối chiếu code, test và Git. Bắt đầu trên `main`, cây sạch, HEAD `1e01750` (tài liệu chốt 6.3); chức năng 6.3 ở `a7aa23b`. Bằng chứng CI 6.3 trong lịch sử áp dụng SHA đó, không phải bằng chứng cho 6.4. Giữ stack, dependency, nhánh hiện có, `.env` và volume; không commit/push theo yêu cầu chờ thử.
+- Thêm Flyway **V5** cho mã ghép, credential khách, đợt/dòng món; không sửa V1–V4 hoặc seed. STAFF có CSRF tạo mã theo phiên OPEN, dùng một lần và hết hạn; khách nhập trên browser riêng nhận cookie HttpOnly/SameSite/path riêng, database chỉ lưu SHA-256. Browser đang đăng nhập nội bộ bị chặn ghép cả UI/backend. Chi tiết thời hạn/quyền ở DOMAIN, API/khóa ở ARCHITECTURE, lựa chọn ở D022.
+- Khách chỉ đọc/gửi/tra kết quả trong phiên được gắn; backend kiểm tra credential/expiry/trạng thái trên mỗi request. Sửa ID không sang bàn khác, không có quyền nhân viên/bếp. CLOSED chặn đọc/gửi; CHECKOUT_PENDING chặn đợt mới nhưng vẫn đọc đơn đã nhận. Chưa có UI/API đóng phiên hoặc checkout; test các trạng thái này chỉ thao tác database kiểm thử biệt lập.
+- UI tablet riêng `/#guest`: menu thật, giỏ số lượng/ghi chú/tạm tính, bước xem lại và xác nhận; món đã gọi từ server theo đợt, reload vẫn có. Menu hiện chưa có tùy chọn; backend chỉ nhận `optionIds: []`, không tự phát minh menu/option mới. Lỗi giá đổi/món hết nói rõ và từ chối toàn bộ; khách cập nhật giá/sửa giỏ rồi xem lại.
+- Server tính tiền/snapshot tên và đơn giá từ database. Transaction/row lock phiên, khóa catalog ổn định và unique khóa gửi theo phiên bảo vệ gửi đồng thời; cùng khóa/nội dung trả đợt cũ, khác nội dung 409. Lỗi insert giữa chừng rollback toàn đợt. Không thêm thanh toán/thuế/phí/hủy hoặc thao tác bếp.
+- Pending UUID/nội dung ghi trước POST vào localStorage theo phiên; mất phản hồi khóa sửa, tra by-key rồi retry cùng khóa, phục hồi sau reload. 403 CSRF không làm bỏ lượt đang chờ; chỉ quyền khách thật sự hết hiệu lực mới bỏ dữ liệu riêng. Cookie không nằm localStorage. Giỏ chưa bấm gửi chỉ trong bộ nhớ; chưa hứa giữ sau reload. Chưa có realtime, dùng tải lại/reload; món ghi `QUEUED`/Chờ bếp cho 6.5.
+- Thêm `scripts/Verify-GuestOrdering.ps1` và runner live Chromium tái sử dụng, tự tạo/dọn đúng database `verify_guest_<guid>` riêng, chạy jar ở 8081. Không mở bàn/tạo đơn test trên database demo. Cập nhật README/AGENTS và tài liệu nghiệp vụ/kiến trúc/UX/quyết định/kiểm thử/vận hành.
+
+### Bằng chứng chạy thực tế
+
+| Lệnh / kiểm tra | Kết quả |
+| --- | --- |
+| `scripts/dev.ps1 db` | PostgreSQL healthy, giữ volume cũ; không đổi/reset `.env` hoặc tài khoản |
+| Dot-source `scripts/Use-Java21.ps1`, `backend/gradlew.bat -p backend --no-daemon test` | **28/28 test đạt**: 6 guest/order mới, 5 identity, 5 menu, 5 bàn, 1 default schema, 6 phiên. XML 0 failures/errors |
+| `scripts/Stop-Preview.ps1`, `scripts/dev.ps1 build`, `scripts/Start-Preview.ps1` | Exit 0: npm ci/lint/TypeScript/Vite build, Gradle **clean build** chạy lại 28 test đạt; migration V5 áp dụng lên demo cũ, health UP |
+| Sau review CSRF cuối: `npm.cmd --prefix frontend run typecheck`, `run lint`, `run build`; `backend/gradlew.bat -p backend --no-daemon bootJar`; Stop/Start-Preview | Tất cả exit 0, jar cuối có UI đã sửa. Java/migration không đổi sau clean build; không ghi đã chạy lại backend test khi chỉ đóng gói lại frontend |
+| `E2E_BASE_URL=http://127.0.0.1:8080`, `npm.cmd --prefix frontend run test:e2e` trên jar cuối | **36/36 Chromium đạt**, 36,5 giây: 7 guest mới, toàn bộ 29 hồi quy auth/menu/bàn/phiên/sidebar. `.last-run.json` passed, failedTests rỗng |
+| `scripts/Verify-GuestOrdering.ps1` trên jar cuối | Exit 0: STAFF mở B01/B02 và cấp mã qua UI; hai BrowserContext ghép/gọi thật; API cấm GET/POST/by-key chéo phiên; giá giả 409, tổng/đơn giá chấp nhận giả không thay giá server; cùng khóa trả đúng đợt cũ |
+| Live mất phản hồi/reload/restart trong cùng script | `route.fetch()` thực sự commit rồi chặn response: tra cùng khóa thấy đúng một đợt. Chặn trước POST + chặn tra khóa, reload rồi retry có UUID/payload giống hệt; không nhân đôi. Restart jar, dùng lại cookie khách: toàn bộ JSON đơn/giá hai bàn giống trước; khách vẫn không có quyền nhân viên. PostgreSQL tạm đúng **3 đợt, 210.000đ**, script dọn DB tạm |
+| Backend tranh chấp và rollback | Hai HTTP session khách thực sự cùng chờ row lock phiên (pg_stat_activity) rồi một đợt duy nhất. Cùng khóa khác nội dung 409; snapshot không đổi khi menu đổi; giá/options/qty/note/tổng sai bị từ chối; ép lỗi insert dòng sau insert batch → không còn batch/dòng, retry cùng khóa được sau phục hồi |
+| Bố cục và ảnh live | 768×1024, 1024×768, 375×812 không tràn ngang; vùng chạm giỏ ≥44px. Đã xem `.work/guest-portrait.png`, `.work/guest-mobile.png`; không có pageerror trong live. Ảnh/log/cookie kiểm thử nằm `.work` Git ignore |
+| Sau toàn bộ test: truy vấn số lượng demo và health | Demo **30 bàn, 2 phiên cũ, 0 order_batch, 0 guest_device**; không còn database `verify_guest_%`. Preview 8080 health UP, dữ liệu người dùng giữ nguyên |
+
+Các lỗi đã gặp/sửa: Gradle không nối loopback trong sandbox nên build/test/Docker/Chromium chạy ngoài sandbox; lỗi overload assert generic trong test mới được sửa trước khi test chạy. Lần hồi quy UI đầu có 32 đạt/3 thất bại vì link tablet mới làm tràn header mobile/đẩy logout ở sidebar thấp: bỏ link khỏi sidebar, dùng link cuối menu và chi tiết bàn, chạy lại **35/35 đạt**. Review sau đó thêm test CSRF tái hiện trên jar trước sửa → **1 thất bại đúng lỗi bỏ pending khi nhận 403**; sửa phân biệt lỗi quyền khách với lỗi CSRF rồi chạy toàn bộ **36/36 đạt**. Không giảm assertion hoặc bỏ test để làm xanh.
+
+### Review và tự thử
+
+- Đã đọc lại migration/service/controller/security/UI/test/script và diff về quyền, sai bàn, giá/tổng, trùng/mất đơn, rollback và kết quả chưa rõ khi mất kết nối. SQL ghi tham số hóa, actor mã ghép từ principal, thời gian/giá từ server; credential thô không lưu database/log/source. Không sửa migration/seed cũ; không có API test/reset hoặc mở LAN. Không phát hiện lỗi chặn thử local trong phạm vi 6.4.
+- `git diff --check` đạt; `.work/scan-review.cjs` quét **117 file source** gồm file mới, bundle và log preview: không thấy secret thật từ `.env` hoặc mẫu private key/GitHub token. `.env`, `.work`, build/dependency/test report vẫn bị ignore. Đây là rà theo giá trị/mẫu đã biết, không phải security audit toàn hệ thống.
+- **Đang chạy:** http://127.0.0.1:8080/#tables; đăng nhập `nhanvien`, mật khẩu `DEMO_STAFF_PASSWORD` trong `.env` local root. Chọn bàn đang phục vụ hoặc mở phiên mới → Tạo mã gắn tablet → mở http://127.0.0.1:8080/#guest trong browser ẩn danh/profile khác → nhập mã → đối chiếu bàn/phiên → thêm món/số lượng/ghi chú → Xem lại → Xác nhận gửi → F5. README mục 6.4 có hướng dẫn chi tiết và cách kiểm tra mất kết nối/hai tablet.
+- Hai tablet cần hai profile/browser tách cookie; hai tab hoặc hai cửa sổ ẩn danh cùng browser thường dùng chung cookie. Browser khách không dùng tài khoản `nhanvien` hoặc `bep`. Không giao cửa sổ đăng nhập nhân viên cho khách. Menu chưa có option nên chỉ thử số lượng/ghi chú; lỗi giá/option/ID giả có bằng chứng API/PostgreSQL và runner live.
+- **Đang chờ:** người dùng thử 6.4 và lời nhắn kết thúc giao chốt commit/push/CI; chưa thực hiện các thao tác đó, chưa có kết quả CI cho 6.4. Không còn phần code 6.4 đang dở chặn nghiệm thu local. Bước tiếp là **6.5 — màn hình bếp**, chưa tự triển khai.
+- **Chưa kiểm chứng:** Safari/iPad/tablet thật, LAN/WAN/HTTPS, ngủ/thức thiết bị, tải đủ 30 phiên và backup/restore; chỉ Windows/Chromium/localhost. Chưa cần thao tác tablet thật để thử bản này vì server vẫn bind localhost; muốn thử thiết bị khác máy cần cấu hình LAN/HTTPS tin cậy trước, không chỉ đổi URL sang IP. Hạn chế này không được thay bằng tuyên bố sẵn sàng vận hành tại quán.
+
+Các mục dưới là lịch sử trước 6.4; trạng thái đang chạy/bước tiếp ở đầu file là thông tin hiện tại.
 
 ## Chốt bàn giao bước 6.3 — 31/10/2026
 

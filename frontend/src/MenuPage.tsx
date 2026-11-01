@@ -1,7 +1,7 @@
 import { useCallback, useEffect, useRef, useState } from 'react'
 import './MenuPage.css'
 
-type MenuItem = { id: number; name: string; priceVnd: number; imagePath: string; available: boolean }
+export type MenuItem = { id: number; name: string; priceVnd: number; imagePath: string; available: boolean }
 type Category = { id: number; name: string; items: MenuItem[] }
 type MenuSnapshot = { categories: Category[]; total: number; observedAt: string }
 
@@ -29,7 +29,7 @@ function DishImage({ item }: { item: MenuItem }) {
     : <img className="dish-image" src={item.imagePath} alt={item.name} width="480" height="300" onError={() => setFailed(true)} />
 }
 
-export default function MenuPage() {
+export default function MenuPage({ onAdd, disabled = false }: { onAdd?: (item: MenuItem) => void; disabled?: boolean }) {
   const [snapshot, setSnapshot] = useState<MenuSnapshot | null>(null)
   const [selectedId, setSelectedId] = useState<number | null>(null)
   const [loading, setLoading] = useState(true)
@@ -108,13 +108,13 @@ export default function MenuPage() {
           {category.items.length === 0 && <p className="empty-state">Nhóm này chưa có món.</p>}
           <div className="dish-grid">{category.items.map(item => <article className={`dish-card ${item.available ? '' : 'sold-out'}`} key={item.id} data-testid="menu-item">
             <div className="dish-visual"><DishImage key={`${imageAttempt}:${item.imagePath}`} item={item} /><span className={`dish-status ${item.available ? 'in-stock' : 'out-of-stock'}`}><i className={`dot ${item.available ? 'green' : 'amber'}`} />{item.available ? 'Còn bán' : 'Hết món'}</span></div>
-            <div className="dish-details"><h3>{item.name}</h3><p className="dish-price">{money.format(item.priceVnd)}</p></div>
+            <div className="dish-details"><h3>{item.name}</h3><p className="dish-price">{money.format(item.priceVnd)}</p>{onAdd && <button className="open-session" disabled={disabled || !item.available || loading || error} onClick={() => onAdd(item)}>Thêm {item.name}</button>}</div>
           </article>)}</div>
         </section>)}
       </section>
       <footer className="content-footer">
         <span className="connection" role="status"><i className={`dot ${error ? 'amber' : snapshot ? 'green' : 'muted'}`} />{error ? 'Kết nối gián đoạn' : loading ? 'Đang kết nối hệ thống quán' : snapshot ? `Đã đọc thực đơn lúc ${time.format(new Date(snapshot.observedAt))}` : 'Chưa có dữ liệu'}</span>
-        <span>Demo xem thực đơn · Chưa hỗ trợ gửi món</span>
+        <span>{onAdd ? 'Giá được kiểm tra lại khi gửi món' : <a className="text-link" href="#guest">Gắn tablet để gọi món</a>}</span>
       </footer>
     </main>
   )

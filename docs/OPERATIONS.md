@@ -1,5 +1,11 @@
 # Vận hành và phục hồi
 
+## Tablet/đơn local sau 6.4
+
+- V5 thêm credential khách và đơn vào PostgreSQL, không thay/reset bảng/phiên cũ. Giữ volume/.env, dừng preview trước build. Khách còn cookie hợp lệ vẫn vào lại đúng phiên sau restart jar; nhân viên vẫn phải đăng nhập lại. Thời hạn/quyền thiết bị và xử lý mất phản hồi theo DOMAIN; không xóa cookie/localStorage lúc lượt gửi chưa rõ kết quả.
+- Kiểm tra riêng bằng `scripts/Verify-GuestOrdering.ps1`: dùng DB tạm tên `verify_guest_<guid>`, không chạm bàn/đơn demo. `.work/guest-live-state.json` chứa cookie kiểm thử tạm và snapshot để so sau restart; bị Git ignore, không chia sẻ. Script dọn đúng DB tạm trong finally.
+- Preview vẫn chỉ localhost, Secure=false chỉ dành HTTP local. Việc có quyền khách không tự xác nhận sẵn sàng LAN; trước tablet thật vẫn cần HTTPS tin cậy/Secure=true, kiểm tra thiết bị và mạng như bên dưới. Không đổi bind ra LAN trong 6.4. Chưa có đóng/dọn bàn, bếp hoặc thu tiền; không dùng reset volume thay quy trình vận hành.
+
 ## Đã kiểm tra local trong M1
 
 PostgreSQL phát triển chạy Compose, volume `restaurant-order_postgres_data` mount tại `/var/lib/postgresql`. Đã thử Compose down/up giữ volume: bản ghi kiểm tra vẫn còn sau tạo lại container; bản ghi đã được dọn, database demo trở lại 30 bàn. Trong thời gian database dừng, API trả HTTP 503; sau khởi động lại, API đọc được dữ liệu. Start/Stop-Preview quản lý riêng tiến trình jar bằng PID và thời điểm khởi động; lệnh thật ở README.

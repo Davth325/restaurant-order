@@ -13,6 +13,13 @@ export async function authPost(path: string, body?: URLSearchParams, signal?: Ab
   return api(path, { method: 'POST', headers: { [csrf.headerName]: csrf.token }, body, signal })
 }
 
+export async function jsonPost(path: string, body?: unknown) {
+  const response = await api('/api/auth/csrf')
+  if (!response.ok) throw new Error('Không kết nối được hệ thống quán.')
+  const csrf: { token: string; headerName: string } = await response.json()
+  return api(path, { method: 'POST', headers: { [csrf.headerName]: csrf.token, 'Content-Type': 'application/json' }, body: JSON.stringify(body) })
+}
+
 export async function currentStaff(): Promise<Staff | null> {
   const response = await api('/api/auth/me')
   if (response.status === 401) return null

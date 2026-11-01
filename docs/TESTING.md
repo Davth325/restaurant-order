@@ -1,6 +1,6 @@
 # Kiểm thử và điều kiện nghiệm thu
 
-Hiện có integration test PostgreSQL/Testcontainers và E2E Chromium cho schema, seed, menu/bàn, đăng nhập/phân quyền 6.2 và mở phiên 6.3. Kết quả thực tế ở STATUS, cách chạy ở README. Các mục ghi “giai đoạn sau” cùng kịch bản gọi món/tiền/mạng chưa triển khai vẫn là yêu cầu, không được coi là đã kiểm tra.
+Hiện có integration test PostgreSQL/Testcontainers và E2E Chromium tới bước 6.4: schema/seed/menu/bàn, đăng nhập 6.2, mở phiên 6.3, tablet và gửi món 6.4. Kết quả thực tế ở STATUS, cách chạy ở README. Các mục ghi “giai đoạn sau” cùng kịch bản bếp/tiền/mạng chưa triển khai vẫn là yêu cầu, không được coi là đã kiểm tra.
 
 ## Kiểm tra bộ khung M1
 
@@ -40,6 +40,15 @@ Hiện có integration test PostgreSQL/Testcontainers và E2E Chromium cho schem
 - `table-sessions.spec.ts`: login thật, mô phỏng response đọc/mở bàn cho UI xác nhận đúng B01/B02, actor/time/phiên, reload, xung đột 409, mất phản hồi không POST lại, khóa double-click, lỗi đọc trạng thái, phiên login hết hạn, cảnh báo snapshot cũ khi thử lại, chờ dọn và bố cục tablet/mobile. Không coi các mock này là bằng chứng transaction/database; bằng chứng đó thuộc test backend và kiểm tra live riêng ghi ở STATUS.
 - E2E menu/bàn/auth cũ vẫn chạy API thật. Test UI mới không tiêu thụ bàn trống hoặc xóa phiên trên volume demo. Kiểm tra live UI → API → database và restart dùng database kiểm thử riêng, giữ B01 demo trống cho chủ dự án thử.
 - Tự thử theo README. Chưa có API đóng/dọn nên không dùng xóa session/reset volume demo làm bước nghiệm thu. Kết quả/lệnh đã chạy thực tế và giới hạn thiết bị/CI ghi ở STATUS.
+
+## Tablet khách và gửi món — 6.4
+
+- `GuestOrderIntegrationTests`, PostgreSQL/Testcontainers + HTTP/cookie/CSRF thật: STAFF tạo mã, anonymous/KITCHEN/thiếu CSRF bị chặn; mã thay thế/hết hạn/một lần; browser STAFF không ghép được; cookie khách HttpOnly/path riêng, hash DB không phải token thô, không có quyền nội bộ.
+- Hai phiên/thiết bị riêng, cấm GET/POST/tra khóa sang phiên kia; CLOSED thu hồi ngay, CHECKOUT_PENDING chặn đợt mới, credential hết hạn bị 401. Giá giả/giá đổi, món không tồn tại/hết, option lạ, số lượng/ghi chú/tổng vượt giới hạn không tạo đợt/dòng một phần. Snapshot giữ nguyên khi đổi menu; lặp cùng khóa trả nguyên đợt, khác nội dung 409; đổi thiết bị vẫn thấy đơn server.
+- Hai request cùng khóa qua hai cookie riêng thực sự cùng chờ khóa phiên (đối chiếu pg_stat_activity) rồi chỉ tạo một đợt. Ép lỗi insert dòng sau insert đợt phải rollback toàn bộ, 503 không lộ SQL; retry cùng khóa sau phục hồi thành công.
+- `guest.spec.ts` dùng mock guest để kiểm tra UI giỏ/xem lại/double-click, mất response rồi tra khóa, reload pending và gửi lại cùng nội dung, lỗi giá/món hết yêu cầu xem lại, quyền hết bỏ dữ liệu, browser STAFF bị chặn và ba kích thước dọc/ngang/phone. Menu/CSRF vẫn từ API thật. Không gọi mock là bằng chứng transaction/database.
+- **Live cách ly demo**: `.\scripts\Verify-GuestOrdering.ps1` (sau build/db, Chromium, cổng 8081 trống) tạo database riêng → staff mở B01/B02 và cấp mã qua UI → hai BrowserContext nhập mã → hai giỏ gửi và reload → sửa ID/giá/tổng/khóa → chặn response sau request đã commit → lỗi trước commit và tra khóa không tới được, reload rồi retry cùng khóa → restart jar với cookie đã lưu → đối chiếu toàn bộ đơn, count/sum DB. Dọn database riêng trong finally; không thao tác bàn/đơn demo.
+- Hồi quy menu/auth/bàn/sidebar chạy cùng suite thường. Số test và lệnh/kết quả thực tế chỉ ghi ở STATUS; không suy CI/Linux/Safari/thiết bị thật từ test Windows/Chromium.
 
 ## Luồng chính (giai đoạn sau)
 

@@ -1,0 +1,23 @@
+.guest-page { background: #f7f5f0; min-height: 100dvh; }
+.guest-header { background: #fff; padding: 22px 5%; display: flex; justify-content: space-between; gap: 16px; flex-wrap: wrap; border-bottom: 1px solid #e2ddd1; }
+.guest-page main { margin: 0 auto; max-width: 1300px; padding: 24px 5%; }
+.guest-panel { background: #fff; border: 1px solid #e2ddd1; border-radius: 16px; padding: 24px; margin-bottom: 22px; overflow-wrap: anywhere; }
+.guest-page h1 { font-size: clamp(24px, 3vw, 32px); }
+.guest-page h2 { font-size: 22px; }
+.guest-page h1, .guest-page h2, .guest-page .brand { font-family: 'Segoe UI', Arial, sans-serif; }
+.guest-header .brand { color: #254731; font-size: 22px; padding: 0; }
+.guest-panel p { line-height: 1.6; margin: 10px 0; }
+.guest-page button, .guest-page input, .guest-page textarea, .pairing-panel button { min-height: 44px; font: inherit; }
+.guest-page button { border: 1px solid #d9d2c5; border-radius: 8px; padding: 10px 16px; cursor: pointer; }
+.guest-page button:disabled { cursor: default; opacity: .55; }
+.guest-page label { display: grid; gap: 6px; margin: 12px 0; }
+.guest-page input, .guest-page textarea { border: 1px solid #bcb5a7; border-radius: 8px; padding: 8px; width: 100%; box-sizing: border-box; }
+.cart-line { border-top: 1px solid #e2ddd1; padding: 16px 0; display: grid; grid-template-columns: minmax(0, 2fr) minmax(80px, .7fr) minmax(0, 2fr); gap: 12px; align-items: center; }
+.cart-line strong { overflow-wrap: anywhere; }
+.cart-total { font-size: 21px; }
+.guest-actions { display: flex; gap: 12px; flex-wrap: wrap; }
+.guest-message { background: #ede8d9; border-left: 4px solid #667045; padding: 18px; overflow-wrap: anywhere; }
+.order-batch { border-top: 1px solid #e2ddd1; padding: 12px 0; }
+.pairing-panel { margin: 18px 0; padding: 18px; border: 1px solid #ded6c5; border-radius: 10px; overflow-wrap: anywhere; }
+.pairing-panel code { display: block; font-size: 20px; margin: 12px 0; user-select: all; overflow-wrap: anywhere; }
+@media (max-width: 600px) { .cart-line { grid-template-columns: 1fr; } .guest-panel { padding: 16px; } .guest-page .detail-heading { flex-wrap: wrap; } }
