@@ -1,5 +1,14 @@
 # Trạng thái hiện tại
 
+Cập nhật mới nhất: **01/11/2026 — 6.4 đã được người dùng nghiệm thu, commit/push và CI Linux thành công cho commit chức năng `bb0382a`.** Giữ nhiều tablet cùng một phiên; chưa triển khai giới hạn một tablet. Bước tiếp: **6.5 — màn hình bếp**. Các ghi chú chờ thử/chờ chốt bên dưới là lịch sử tại thời điểm ghi nhận.
+
+## Kết quả commit/push/CI 6.4 — 01/11/2026
+
+- **Commit chức năng:** [`bb0382a1cae66b54682039f2ebfc4c3bb748e7b9` — feat: add scoped guest tablets and idempotent ordering](https://github.com/Davth325/restaurant-order/commit/bb0382a1cae66b54682039f2ebfc4c3bb748e7b9), 27 file thay đổi; push fast-forward `1e01750..bb0382a` lên `main` thành công. GitHub API xác nhận main không bảo vệ, tài khoản có quyền push; không force push hoặc đổi nhánh. `git diff --cached --check`/rà secret đạt trước commit; cây làm việc sạch sau push.
+- **CI thực tế:** [Build and test — run 41264232571](https://github.com/Davth325/restaurant-order/actions/runs/41264232571), event push, `head_sha=bb0382a1cae66b54682039f2ebfc4c3bb748e7b9`, **completed/success**. [Job verify 124723562396](https://github.com/Davth325/restaurant-order/actions/runs/41264232571/job/124723562396) xác nhận các bước frontend checks/build, backend clean build/PostgreSQL tests, chuẩn bị demo, chạy jar, browser flow và dừng database đều success. Không giảm/bỏ kiểm tra để làm xanh.
+- Bằng chứng CI trên áp dụng chính xác commit chức năng 6.4 đã được người dùng thử, không dùng CI 6.3 thay thế. Kết quả này được ghi/push bằng commit tài liệu riêng sau khi run đã hoàn tất; không suy CI của commit tài liệu từ run chức năng.
+- **Bàn giao:** giữ bản hiện tại theo lựa chọn rõ của người dùng; không còn việc code 6.4 chặn chốt. Chưa tự triển khai 6.5, chính sách một tablet/thay tablet, realtime hoặc bill. Preview/database local vẫn chạy tại http://127.0.0.1:8080 để người dùng dùng tiếp; không xóa dữ liệu bàn/đơn đã thử. Giới hạn Safari/tablet thật/LAN/HTTPS/tải/backup vẫn giữ như phần triển khai.
+
 ## Chốt bản 6.4 đã nghiệm thu — 01/11/2026
 
 - Người dùng đã thử và chọn rõ **“Giữ bản hiện tại và chốt bàn giao”** sau giải thích B02: chốt luồng nhiều tablet cùng một phiên, không triển khai giới hạn một tablet/thay tablet. Hai đợt gọi chung phiên không phải hai bill; tải lại thủ công để đọc đủ các đợt từ thiết bị khác. Đề xuất một tablet ở mục đối chiếu bên dưới chưa được chọn, không còn là việc chặn bàn giao.
