@@ -91,7 +91,7 @@ test('lost response blocks retries until a successful state check and never repo
   const saved = { ...b01, status: 'OCCUPIED', currentSession: session }
   await page.route('**/api/tables/*', route => route.fulfill({ json: saved }))
   await page.route('**/api/tables', route => route.fulfill({ json: {
-    ...source, tables: source.tables.map((table: { id: number }) => table.id === b01.id ? saved : table),
+    ...source, tables: source.tables.map((table: { id: number }) => table.id === b01.id ? saved : { ...table, status: 'AVAILABLE', currentSession: null }),
   } }))
   await detail.getByRole('button', { name: 'Kiểm tra trạng thái B01' }).click()
   await expect(detail).toContainText('bàn đã có phiên phục vụ. Không gửi lại yêu cầu mở.')

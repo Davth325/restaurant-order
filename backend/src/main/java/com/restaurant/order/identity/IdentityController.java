@@ -37,6 +37,6 @@ public class IdentityController {
     @GetMapping("/api/kitchen/workspace")
     public ResponseEntity<Map<String, String>> kitchen() {
         return ResponseEntity.ok().cacheControl(CacheControl.noStore())
-                .body(Map.of("message", "Đã vào khu vực bếp. Hàng đợi món sẽ được triển khai ở bước sau."));
+                .body(Map.of("message", "Khu vực bếp: xem hàng đợi, bắt đầu làm và hoàn thành từng suất."));
     }
 }

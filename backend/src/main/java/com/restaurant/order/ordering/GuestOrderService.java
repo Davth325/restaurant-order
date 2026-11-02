@@ -1,6 +1,8 @@
 package com.restaurant.order.ordering;
 
 import com.restaurant.order.dining.TableOperationException;
+import com.restaurant.order.fulfillment.KitchenChanged;
+import org.springframework.context.ApplicationEventPublisher;
 import java.io.ByteArrayOutputStream;
 import java.io.DataOutputStream;
 import java.nio.charset.StandardCharsets;
@@ -23,13 +25,15 @@ public class GuestOrderService {
     public record Binding(String token, GuestSession session) {}
     public record Line(Long menuItemId, Integer quantity, Long expectedPriceVnd, List<Long> optionIds, String note) {}
     public record Submit(UUID requestKey, List<Line> items) {}
-    public record Item(long id, long menuItemId, String name, long unitPriceVnd, int quantity, String note, String status) {}
+    public record Progress(int queued, int preparing, int ready) {}
+    public record Item(long id, long menuItemId, String name, long unitPriceVnd, int quantity, String note, String status, Progress progress) {}
     public record Batch(long id, UUID requestKey, Instant createdAt, long totalVnd, List<Item> items) {}
     private static final long MAX_MONEY = 9007199254740991L;
     private static final SecureRandom RANDOM = new SecureRandom();
     private final JdbcTemplate jdbc;
+    private final ApplicationEventPublisher events;
 
-    public GuestOrderService(JdbcTemplate jdbc) { this.jdbc = jdbc; }
+    public GuestOrderService(JdbcTemplate jdbc, ApplicationEventPublisher events) { this.jdbc = jdbc; this.events = events; }
 
     private static TableOperationException fail(HttpStatus status, String code, String message) {
         return new TableOperationException(status, code, message);
@@ -121,9 +125,17 @@ public class GuestOrderService {
         return batch(ids.getFirst());
     }
     private Batch batch(long id) {
-        var items = jdbc.query("SELECT * FROM order_item WHERE batch_id = ? ORDER BY id", (rs, row) -> new Item(
+        var items = jdbc.query("""
+                SELECT i.*, count(*) FILTER (WHERE u.status = 'QUEUED') AS queued,
+                    count(*) FILTER (WHERE u.status = 'PREPARING') AS preparing,
+                    count(*) FILTER (WHERE u.status = 'READY') AS ready
+                FROM order_item i JOIN fulfillment_unit u ON u.order_item_id = i.id
+                WHERE i.batch_id = ? GROUP BY i.id ORDER BY i.id
+                """, (rs, row) -> new Item(
                 rs.getLong("id"), rs.getLong("menu_item_id"), rs.getString("item_name"), rs.getLong("unit_price_vnd"),
-                rs.getInt("quantity"), rs.getString("note"), rs.getString("status")), id);
+                rs.getInt("quantity"), rs.getString("note"), rs.getInt("ready") == rs.getInt("quantity") ? "READY"
+                    : rs.getInt("ready") > 0 ? "PARTIALLY_READY" : rs.getInt("preparing") > 0 ? "PREPARING" : "QUEUED",
+                new Progress(rs.getInt("queued"), rs.getInt("preparing"), rs.getInt("ready"))), id);
         return jdbc.queryForObject("SELECT * FROM order_batch WHERE id = ?", (rs, row) -> new Batch(id,
                 rs.getObject("request_key", UUID.class), rs.getTimestamp("created_at").toInstant(), rs.getLong("total_vnd"), items), id);
     }
@@ -178,9 +190,11 @@ public class GuestOrderService {
                 Long.class, sessionId, request.requestKey(), fingerprint, total);
         for (var line : request.items()) {
             var item = catalog.get(line.menuItemId());
-            jdbc.update("INSERT INTO order_item(batch_id, menu_item_id, item_name, unit_price_vnd, quantity, note) VALUES (?, ?, ?, ?, ?, ?)",
-                    id, item.id(), item.name(), item.price(), line.quantity(), line.note());
+            Long lineId = jdbc.queryForObject("INSERT INTO order_item(batch_id, menu_item_id, item_name, unit_price_vnd, quantity, note) VALUES (?, ?, ?, ?, ?, ?) RETURNING id",
+                    Long.class, id, item.id(), item.name(), item.price(), line.quantity(), line.note());
+            jdbc.update("INSERT INTO fulfillment_unit(order_item_id, unit_number) SELECT ?, n FROM generate_series(1, ?) n", lineId, line.quantity());
         }
+        events.publishEvent(new KitchenChanged());
         return batch(id);
     }
     private record CatalogItem(long id, String name, long price, boolean available) {}

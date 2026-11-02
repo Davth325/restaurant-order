@@ -1,5 +1,14 @@
 # Màn hình và tương tác
 
+## Màn hình bếp đã triển khai — 6.5, 02/11/2026
+
+- /#kitchen chỉ cho bếp: tổng suất chờ/đang làm/đã xong; thẻ bàn + đợt trong phiên + mã đợt + giờ gửi + phút chờ. Đợt cũ trước; còn món sau 15 phút có chữ Chờ lâu và nền cảnh báo.
+- Tên món/số lượng/ghi chú xuống dòng rõ; mỗi suất có trạng thái bằng chữ và nút Bắt đầu làm hoặc Xác nhận xong. Nút tối thiểu 48px; giữ suất đã xong và số 1/3 trong đợt còn làm để dễ đối chiếu. Mặc định mục Đang xử lý; đợt xong toàn bộ tự chuyển khỏi danh sách này. Nút Đã xong · chờ mang có số đợt để mở xem lại; nút Đang xử lý trở về việc còn làm. Mỗi mục có trạng thái rỗng riêng, reload vẫn phân loại theo dữ liệu máy chủ.
+- Có dấu hiệu kết nối bằng chữ, không phát âm thanh. SSE mất nhưng API còn hoạt động: hiện đang tải lại mỗi 15 giây. Snapshot lỗi: hiện giờ đọc gần nhất, dữ liệu có thể cũ và khóa thao tác. Tải lại thành công mới bỏ cảnh báo. Khi mất phản hồi POST hoặc có xung đột, hiện lời nhắn và đọc lại trạng thái, không tự chuyển suất khác.
+- Mở lại/reconnect/quay về tab đọc server, không dựa vào thông báo đã bỏ lỡ. Menu/nhân viên giữ quy trình hiện có. Khách bấm Tải lại món đã gọi để thấy tiến độ suất mới.
+- Bố cục thích ứng tablet dọc/ngang và điện thoại; thử Chromium không thay thế Safari/iPad thật. Nhận mang thuộc 6.6; chưa có nút nhận mang ở bếp.
+
+
 ## Tablet khách đã triển khai — 6.4, 31/10/2026
 
 - Nhân viên chọn bàn/phiên OPEN → Tạo mã gắn tablet; hiện mã dùng một lần, giờ hết hạn, bàn/phiên và hướng dẫn mở browser khách riêng. Đối chiếu đúng bàn trên tablet trước giao khách. Link cửa sổ mới không tự cách ly cookie; cần ẩn danh/profile/trình duyệt khác.

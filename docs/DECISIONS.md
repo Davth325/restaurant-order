@@ -38,3 +38,11 @@ Khi thay đổi: thêm ngày, người chốt, lý do, phần bị ảnh hưởn
 - D014: không chặn bộ khung chạy trên localhost; là điều kiện trước thử LAN/thiết bị và đưa vào quán. GitHub đích đã được chủ dự án cung cấp ngày 30/10/2026: `Davth325/restaurant-order`; tiến độ lưu source và CI ở STATUS.
 
 Kế hoạch và điều kiện nghiệm thu M1 ở [tasks/M1-SCAFFOLD.md](tasks/M1-SCAFFOLD.md).
+
+## D023 — Triển khai màn hình bếp 6.5, 02/11/2026
+
+Theo yêu cầu chủ dự án, Codex triển khai FulfillmentUnit theo suất với chuyển QUEUED → PREPARING → READY; ID suất + trạng thái đích làm thao tác lặp an toàn, khóa phiên và UPDATE có điều kiện bảo vệ đồng thời. V6 chuyển đơn cũ sang từng suất và bỏ trạng thái dòng để giữ một nguồn sự thật. Chọn SSE invalidation sau commit, heartbeat và refetch/poll dự phòng theo ARCHITECTURE; không thêm dependency hoặc event broker. Chọn giữ các suất xong, thứ tự đợt cũ trước và ngưỡng chờ lâu 15 phút cho demo. Không thay chính sách nhiều tablet đã nghiệm thu 6.4, không mở LAN hoặc triển khai 6.6. DOMAIN/ARCHITECTURE mô tả hợp đồng; STATUS ghi bằng chứng thực chạy.
+
+## D024 — Ẩn đợt đã xong khỏi hàng đợi chính, 02/11/2026
+
+Chủ dự án yêu cầu: B02 đợt 1 hoàn thành thì rời màn hình làm món, có mục mở lại đã xong. Thay lựa chọn giữ mọi đợt trong cùng danh sách ở D023: mặc định Đang xử lý chỉ hiện đợt còn suất QUEUED/PREPARING; mọi suất của mọi dòng READY mới vào Đã xong · chờ mang. Phân loại theo batch ID từ snapshot server, không theo toàn bàn hoặc một dòng món; không xóa dữ liệu, không thêm mutation/migration hoặc triển khai nhận mang 6.6. Reload/reconnect phân loại lại, mặc định Đang xử lý. Chi tiết hiện hành ở DOMAIN/UX, bằng chứng ở STATUS.

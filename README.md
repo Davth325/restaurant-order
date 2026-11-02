@@ -1,6 +1,6 @@
 # Ứng dụng gọi món nhà hàng
 
-Bộ khung M1 tới bước **6.4 — tablet khách và gửi món**: Java 21 + Spring Boot + Gradle Wrapper, React + TypeScript + Vite, PostgreSQL + Flyway + Spring Security. Menu/30 bàn/phiên/đợt gọi lấy từ database thật. Nhân viên mở phiên và tạo mã ghép tablet; khách có quyền riêng, chọn và xem lại món, gửi đợt gọi chống trùng, xem món đã gọi sau reload. Chưa có đóng/dọn bàn, màn hình hàng đợi bếp hoặc thu tiền.
+Bộ khung M1 tới bước **6.5 — màn hình bếp**: Java 21 + Spring Boot + Gradle Wrapper, React + TypeScript + Vite, PostgreSQL + Flyway + Spring Security. Menu/30 bàn/phiên/đợt gọi lấy từ database thật. Nhân viên mở phiên và tạo mã ghép tablet; khách có quyền riêng, chọn và xem lại món, gửi đợt gọi chống trùng, xem món đã gọi sau reload. Bếp thấy món realtime và xử lý từng suất; chưa có đóng/dọn bàn, nhận mang hoặc thu tiền.
 
 Phạm vi sản phẩm giữ nguyên: demo 30 bàn, một bếp, QR do nhân viên kiểm tra và xác nhận. Kiến trúc máy chủ tại quán chạy qua LAN khi mất Internet vẫn là đề xuất; chưa kiểm chứng vận hành tại quán. [Phạm vi](docs/PRODUCT.md) · [Quyết định](docs/DECISIONS.md) · [Trạng thái thực tế](docs/STATUS.md).
 
@@ -42,7 +42,7 @@ Mở [đăng nhập](http://127.0.0.1:8080/#login). Menu vẫn xem công khai, s
 | Tài khoản demo | Mật khẩu tại `.env` local | Sau đăng nhập |
 | --- | --- | --- |
 | `nhanvien` | Giá trị `DEMO_STAFF_PASSWORD` | Sơ đồ 30 bàn, mở/xem phiên |
-| `bep` | Giá trị `DEMO_KITCHEN_PASSWORD` | Khu vực bếp (chưa có hàng đợi) |
+| `bep` | Giá trị `DEMO_KITCHEN_PASSWORD` | Hàng đợi bếp, bắt đầu/xong từng suất |
 
 Mật khẩu được sinh riêng trên máy, không có mật khẩu chung trong Git. Mở `.env` tại root để sao chép; không chia sẻ file này. Chỉ profile demo seed hai tài khoản bằng Flyway, lưu BCrypt ở PostgreSQL; restart không reset. Sửa mật khẩu trong `.env` sau seed không thay mật khẩu tài khoản đã có; chưa có giao diện reset/quản trị (6.10).
 
@@ -97,7 +97,19 @@ Kiểm tra kỹ thuật giá giả, sửa ID phiên, lặp khóa và đồng th�
 
 Script tạo database `verify_guest_<guid>` riêng, mở hai bàn/tablet, thử mất phản hồi/reload, restart jar và đối chiếu đúng 3 đợt/210.000đ trong database đó, sau đó dọn đúng database tạm. Không reset bàn/đơn demo. Bằng chứng và giới hạn ở STATUS. Quyền tablet có thời hạn tuyệt đối 12 giờ, tồn tại qua restart server, và bị từ chối ngay khi phiên bàn đóng ở backend; chưa có UI đóng phiên trong 6.4.
 
-Chưa mở LAN/HTTPS nên **không cần tablet thật để nghiệm thu local**. Không dùng địa chỉ `127.0.0.1` trên tablet khác máy, vì nó trỏ về chính tablet. Thử tablet thật cần bước cấu hình LAN/HTTPS tin cậy và cookie Secure theo OPERATIONS, chưa nằm trong lần bàn giao này. Tiếp theo: **6.5 — màn hình bếp**.
+Chưa mở LAN/HTTPS nên **không cần tablet thật để nghiệm thu local**. Không dùng địa chỉ `127.0.0.1` trên tablet khác máy, vì nó trỏ về chính tablet. Thử tablet thật cần bước cấu hình LAN/HTTPS tin cậy và cookie Secure theo OPERATIONS, chưa nằm trong lần bàn giao này. Bếp đã có theo mục 6.5 bên dưới; tiếp theo: **6.6 — nhân viên mang món**.
+
+## Tự thử màn hình bếp — bước 6.5
+
+1. Mở http://127.0.0.1:8080/#kitchen trên browser/profile riêng, đăng nhập **bep**, mật khẩu **DEMO_KITCHEN_PASSWORD** trong .env local tại root. Giữ cửa sổ nhân viên và khách riêng cookie theo mục 6.4.
+2. Khách gửi 3 suất cùng món có ghi chú. Bếp tự thấy đúng bàn, đợt, giờ/phút chờ, tên, 3 suất và ghi chú; không cần bấm tải lại. Đơn đã gửi ở 6.4 cũng có suất chờ làm, không phải gửi lại.
+3. Chọn Bắt đầu làm ở suất 1 → Xác nhận xong ở suất 1. Dòng còn **1/3 đã xong · 2 chờ làm**. Khi hoàn thành toàn bộ suất của mọi món trong đợt, thẻ đợt tự rời **Đang xử lý**; bấm **Đã xong · chờ mang** để xem lại. Đợt khác của cùng bàn chưa xong vẫn hiện ở Đang xử lý. Không bấm thêm nếu thực tế chưa làm; các suất xong giữ trạng thái chờ mang, chưa có thao tác nhân viên nhận.
+4. F5 hoặc mở bếp ở browser/profile khác đăng nhập bep: cùng tiến độ. Hai màn hình cùng bấm đúng một suất không tăng số lượng. Khách bấm Tải lại món đã gọi để thấy tiến độ mới.
+5. Thử DevTools → Network → Offline rồi Tải lại hàng đợi: có cảnh báo dữ liệu cũ, nút từng suất bị khóa. Bỏ Offline, tải lại: hiện trạng thái mới, không làm mất/đảo trạng thái. Chặn riêng /api/kitchen/events khi API còn tới được: có cảnh báo realtime và tải lại mỗi 15 giây.
+6. Chưa cần iPad thật cho nghiệm thu local. Để nhìn bố cục, dùng DevTools 768×1024 hoặc 1024×768. Thiết bị khác máy chưa truy cập được vì localhost, LAN/HTTPS chưa cấu hình; không dùng 127.0.0.1 trên iPad để trỏ về máy tính.
+
+Kiểm tra biệt lập không tạo món thử vào database demo: sau build/db và Chromium đã cài, chạy **.\scripts\Verify-Kitchen.ps1**. Script tự tạo/dọn DB tạm, kiểm tra hai bàn/hai bếp, realtime, 1/3, mất phản hồi, polling/reconnect và restart. Chạy tuần tự với Verify-GuestOrdering.ps1 vì dùng chung cổng 8081. Bước tiếp: **6.6 — nhân viên mang món**.
+
 
 ## Dừng và chạy lại
 

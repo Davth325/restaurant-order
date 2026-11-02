@@ -8,6 +8,8 @@ Khi giao thực hiện M1 ngày 29/10/2026, chủ dự án xác nhận thêm Jav
 
 Ngày 30/10/2026, chủ dự án yêu cầu menu mẫu từ database: nhóm món, tên, giá, ảnh, còn bán/hết món; API và UI tablet có tải/rỗng/lỗi, tải lại trang vẫn đọc được. Phạm vi này chỉ xem menu; chưa chốt menu thật, giỏ hàng, gửi món, tùy chọn, buffet/combo/cân hoặc thuế/phí. Mặc định triển khai mẫu: giá VND nguyên đồng theo món, ảnh minh họa local; chi tiết ở DOMAIN.
 
+Ngày 02/11/2026, bước 6.5 triển khai màn hình bếp: xem món đã gửi theo bàn/đợt, bắt đầu và hoàn thành từng suất, chống bấm lặp/thao tác đồng thời, cập nhật SSE và tải snapshot phục hồi. Chưa triển khai nhân viên nhận mang (6.6), hủy hoặc thanh toán. Chi tiết nghiệp vụ ở DOMAIN, bằng chứng ở STATUS.
+
 ## Mục tiêu demo
 
 Ngày 31/10/2026, bước 6.4 triển khai nhân viên gắn tablet bằng mã một lần, quyền khách riêng theo phiên, giỏ/xem lại/gửi đợt gọi vào PostgreSQL, chống gửi trùng và tra kết quả khi mất phản hồi, xem món đã gọi sau reload. Giữ menu mẫu theo suất cố định hiện có, chưa có option trong dữ liệu; giới hạn demo và luật gửi cụ thể ở DOMAIN. Bếp mới ghi trạng thái Chờ bếp, màn hình bếp để 6.5; chưa mở LAN hoặc thay quyết định menu thật/thuế/phí.

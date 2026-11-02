@@ -1,6 +1,67 @@
 # Trạng thái hiện tại
 
-Cập nhật mới nhất: **01/11/2026 — 6.4 đã được người dùng nghiệm thu, commit/push và CI Linux thành công cho commit chức năng `bb0382a`.** Giữ nhiều tablet cùng một phiên; chưa triển khai giới hạn một tablet. Bước tiếp: **6.5 — màn hình bếp**. Các ghi chú chờ thử/chờ chốt bên dưới là lịch sử tại thời điểm ghi nhận.
+Cập nhật mới nhất: **02/11/2026 — người dùng đã thử và nghiệm thu 6.5, gồm tự ẩn đợt xong và mở xem lại.** Đang chốt commit/push và kiểm tra CI đúng commit mới; chưa có kết quả CI 6.5 tại thời điểm ghi mục nghiệm thu này. Bước tiếp: **6.6 — nhân viên mang món**. Các ghi chú chờ thử bên dưới là lịch sử.
+
+## Chốt nghiệm thu 6.5 — 02/11/2026
+
+- Người dùng xác nhận **“tôi test ok rồi chốt lại đi”** sau bản tự ẩn đợt xong khỏi Đang xử lý và mục Đã xong · chờ mang. Đây là nghiệm thu bản giao local; không suy rằng mọi ca quyền/đồng thời/mạng đã được người dùng thử riêng.
+- Review cuối code/migration/security/UI/test/script/workflow và diff về quyền, sai bàn, giá/tổng, lặp/đồng thời/rollback, mất phản hồi và phân loại cả đợt: giữ nguyên code đã thử, không triển khai nhận mang 6.6 hoặc mở LAN. Toàn bộ V1–V5 và seed được giữ; V6 là migration mới.
+- Đối chiếu báo cáo thực: XML **34 backend test, 0 failures/errors**; Playwright .last-run.json passed/failedTests rỗng và **40/40 Chromium** của bản UI cuối. Verify-Kitchen trên DB riêng đã kiểm hai bếp/từng suất/ẩn cả đợt/polling/reconnect/reload/restart, đúng 3 đợt/225.000đ/5 suất/3 READY và dọn DB tạm. Không chạy lại các bộ test này trong lượt chỉ chốt nếu không đổi code; CI sẽ build/test sạch trên Linux.
+- git fetch origin thành công; local main và origin/main cùng baseline **61bf8fd**, 0 ahead/behind. GitHub API xác nhận repository Davth325/restaurant-order, default branch main không bảo vệ, tài khoản có quyền push. Tiếp tục nhánh main hiện có, không force push.
+- git diff --check đạt; scan-review.cjs quét **127 file source** cùng bundle/log không thấy secret local đã biết hoặc mẫu private key/GitHub token. .env/.work/cookie/build/dependency/test report bị ignore. Đây là kiểm tra theo mẫu/giá trị đã biết, không phải security audit toàn hệ thống.
+- Preview http://127.0.0.1:8080/#kitchen còn chạy, health UP; giữ database demo và mọi đơn người dùng đã thử. Chưa kiểm chứng Safari/iPad thật, LAN/HTTPS, tải 30 bàn hoặc backup/restore; giới hạn trong các mục triển khai vẫn áp dụng.
+- Đã được giao commit/push và kiểm tra CI; kết quả SHA/run sẽ bổ sung khi GitHub thực sự trả về. Không dùng CI 6.4 để thay bằng chứng 6.5. Bước tiếp **6.6 — nhân viên mang món**, chưa tự triển khai.
+
+## Chỉnh theo phản hồi: ẩn đợt đã hoàn thành — 02/11/2026
+
+- Người dùng yêu cầu B02 đợt 1 xong thì rời hàng đợi chính, có mục mở xem lại. Đã thêm hai mục Đang xử lý / Đã xong · chờ mang, có số đợt. Chỉ chuyển mục khi mọi suất của mọi món trong đợt READY; đợt chưa hoàn thành và đợt khác cùng bàn vẫn hiện riêng. Reload/reconnect phân loại theo snapshot database; không xóa đơn hoặc giữ cờ ẩn local.
+- Tiếp nối toàn bộ thay đổi 6.5 chưa commit trên main, không sửa backend/migration/quyền/giá/trạng thái hoặc dữ liệu demo. Cập nhật DOMAIN/UX/ARCHITECTURE/DECISIONS D024/TESTING và README; D024 thay lựa chọn hiển thị ban đầu D023.
+- Đã chạy npm.cmd --prefix frontend run typecheck / run lint / run build: exit 0; Gradle --no-daemon bootJar: exit 0; Stop/Start-Preview mở jar mới tại 8080. Backend không đổi trong lượt sửa hiển thị này nên không chạy lại 34 test backend; bằng chứng trước sửa ở mục 6.5 bên dưới.
+- E2E_BASE_URL=http://127.0.0.1:8080, npm.cmd --prefix frontend run test:e2e: **40/40 Chromium đạt**, 36,9 giây, .last-run.json passed. Test mới kiểm một món xong nhưng món khác cùng đợt còn làm, hoàn thành suất cuối mới chuyển mục, đợt khác cùng bàn giữ nguyên, mở xem lại và reload.
+- scripts/Verify-Kitchen.ps1: exit 0 trên DB tạm riêng; hoàn thành toàn bộ B02 đợt 1 qua UI, tự ẩn ở hai bếp (kể cả màn hình chặn SSE dùng polling), mở lại Đã xong, reload và restart vẫn đúng. B01 2/3 giữ ở Đang xử lý. DB giữ đúng **3 đợt/225.000đ/5 suất/3 READY**, DB tạm đã dọn. Không thêm đơn test vào demo.
+- Đã xem ảnh .work/kitchen-ready.png: nút chọn mục và thẻ đã xong rõ trên tablet dọc; hồi quy bố cục dọc/ngang/phone đều đạt. git diff --check và scan-review.cjs đạt; 127 file source/bundle/log không thấy secret local đã biết hoặc mẫu private key/GitHub token. Review điều kiện xét toàn bộ suất theo đợt, không sửa quyền/tiền hoặc thêm request xóa dữ liệu.
+- Sẵn sàng thử lại: F5 http://127.0.0.1:8080/#kitchen, đăng nhập bep nếu cần (DEMO_KITCHEN_PASSWORD trong .env). B02 đợt đã xong nằm ở Đã xong · chờ mang, danh sách Đang xử lý chỉ còn đợt chưa xong. Chưa kiểm Safari/iPad thật; server vẫn localhost như giới hạn trước. Chưa commit/push/CI; chờ người dùng thử/chốt, bước tiếp 6.6.
+
+Các mục 6.5 bên dưới ghi kết quả trước thay đổi lọc đợt; kết quả mới ở mục này.
+
+## Màn hình bếp — 6.5, 02/11/2026
+
+### Đã làm
+
+- Đọc AGENTS/README/STATUS và PRODUCT/DOMAIN/ARCHITECTURE/UX/DECISIONS/TESTING/OPERATIONS; đối chiếu code/Git. Baseline main sạch, HEAD 61bf8fd (tài liệu bàn giao 6.4), chức năng trước ở bb0382a. 6.4 trong code đã có gửi món thật, bếp chỉ là trang giữ chỗ, chưa có realtime. Bằng chứng CI 6.4 trong lịch sử không thay CI 6.5. Không đổi nhánh/stack/dependency, không commit/push.
+- Khởi động Docker Desktop bằng docker desktop start, Initialize-Dev giữ .env hiện có, PostgreSQL healthy với volume cũ. Dừng preview trước build. Docker/Gradle/Chromium cần chạy ngoài sandbox để truy cập engine và loopback; không đổi cấu hình mạng hay xóa dữ liệu.
+- Flyway V6 thêm FulfillmentUnit, backfill đúng từng suất của đơn cũ và bỏ trạng thái dòng; giữ ID/bàn/phiên/đợt/tên/giá/tổng/số lượng/ghi chú. Gửi đợt mới lưu dòng và toàn bộ suất cùng transaction. Không sửa migration cũ/seed.
+- Package fulfillment có snapshot bếp và chuyển QUEUED → PREPARING → READY; KITCHEN/CSRF, kiểm enabled/role hiện tại, khóa phiên cùng thứ tự ordering và UPDATE có điều kiện. ID suất + đích làm retry cùng thao tác an toàn, không chọn suất tiếp theo; lưu actor/time backend, sai luồng trả 409. Khách đọc tiến độ tổng hợp từ suất khi tải lại.
+- UI /#kitchen gom bàn/phiên/đợt/dòng, có thời gian chờ, món/số lượng/ghi chú, nút riêng từng suất, tổng chờ/đang làm/xong. Giữ READY để đối chiếu 1/3. Mặc định đợt cũ trước, chờ ≥15 phút có chữ cảnh báo; đây là ngưỡng hiển thị demo. Không âm thanh; chưa có nhận mang/hủy/phục vụ.
+- SSE invalidation sau commit, heartbeat và kiểm lại session/quyền. Client đọc snapshot khi mở/reconnect/đổi dữ liệu/quay lại tab, polling 15 giây dự phòng. Mất SSE có cảnh báo riêng; lỗi REST giữ dữ liệu cũ, giờ đọc gần nhất và khóa nút; mất response POST không tự tăng hoặc gửi suất khác. Màn hình bếp trực ca giữ HTTP session hoạt động do polling; logout khi kết thúc.
+- Thêm KitchenIntegrationTests, kitchen.spec.ts và Verify-Kitchen.ps1 + runner live trên database tạm riêng. Sửa fixture mất phản hồi của test 6.3 để trạng thái B02 mô phỏng không bị trộn với B02 demo đã có khách; giữ nguyên kiểm tra khóa/mở lại/chống POST lặp, không reset dữ liệu demo. Cập nhật README/AGENTS và tài liệu liên quan, D023 ghi lý do.
+
+### Bằng chứng thực chạy
+
+| Lệnh / kiểm tra | Kết quả |
+| --- | --- |
+| scripts/dev.ps1 db | PostgreSQL healthy, volume/.env/tài khoản cũ giữ nguyên |
+| scripts/dev.ps1 build (bản cuối sau sửa ASYNC) | Exit 0: npm ci/lint/TypeScript/Vite, Gradle clean build; **34/34 backend test, 0 failures/errors** (6 bếp mới + 28 hồi quy) |
+| KitchenIntegrationTests | HTTP/cookie/CSRF thật, hai bàn/đợt/ghi chú/3 suất/1 xong, sai quyền/disabled/phiên đóng, nhảy/lùi/lặp và actor/time không đổi; hai session bếp thực sự chờ khóa ở pg_stat_activity cho cả bắt đầu và xong, cuối cùng READY/QUEUED/QUEUED |
+| Migration/rollback/SSE backend | Schema kiểm thử từ V5 có đơn cũ lên V6 giữ dữ liệu và thêm 3 suất; ép lỗi suất thứ hai rollback cả đợt/dòng/suất; SSE HTTP thật chỉ nhận thay đổi đã commit, logout đóng stream không có lỗi quyền/response đã commit trong log |
+| scripts/Start-Preview.ps1 | Exit 0, jar 6.5 áp dụng V6 vào database demo có đơn 6.4, health UP tại 8080 |
+| npm.cmd --prefix frontend run typecheck và run lint | Exit 0 sau cập nhật UI và test |
+| E2E_BASE_URL=http://127.0.0.1:8080, npm.cmd --prefix frontend run test:e2e (jar cuối) | **39/39 Chromium đạt**, 36,2 giây; .last-run.json passed, failedTests rỗng. Gồm 3 bếp mới và toàn bộ 36 hồi quy |
+| scripts/Verify-Kitchen.ps1 (chạy lại trên jar cuối) | Exit 0; hai bàn khách/hai bếp, tự hiện đúng bàn, 1/3 còn 2, mất response đã commit/refetch, reload, SSE bị chặn → polling, offline khóa/reconnect lấy thay đổi của bếp khác; restart jar/login lại so toàn bộ suất và đơn không đổi. DB tạm đúng **3 đợt/225.000đ/5 suất/2 READY**, đã dọn |
+| scripts/Verify-GuestOrdering.ps1 | Exit 0 (trước sửa ASYNC completion, ordering không đổi sau kiểm tra này); hồi quy thật 6.4 hai tablet/đúng phiên/giá/chống trùng/mất response/reload/restart; DB tạm đúng 3 đợt/210.000đ, đã dọn |
+| node .work/verify-kitchen-renew.cjs (jar cuối) | Exit 0: stream thứ hai được xác thực sau chu kỳ 60 giây, UI kết nối trực tiếp trở lại; logout phiên thử. Log preview/kitchen không có ERROR/AuthorizationDeniedException/response already committed sau sửa |
+| Ảnh live .work/kitchen-portrait.png, kitchen-landscape.png, kitchen-phone.png | 768×1024, 1024×768, 375×812 không tràn ngang, nút ≥44px. Đã xem ảnh dọc/ngang; chữ bàn/món/ghi chú và trạng thái 1/3 rõ, live không có pageerror |
+| Đọc demo sau kiểm tra | 30 bàn, 3 phiên, 2 đợt cũ, 4 suất; **0 dòng lệch số suất so với quantity**, không còn DB verify_kitchen_% hoặc verify_guest_%; health UP. Kiểm thử live không tạo bàn/đơn vào demo |
+
+Chromium đã đạt 39/39 và SSE chu kỳ 60 giây đã reconnect thành công. Review log sau đó phát hiện lỗi ASYNC completion khi logout; assertion log mới tái hiện **1/1 thất bại đúng lỗi** trên code trước sửa. Đã thu hẹp quyền ASYNC cho riêng bước kết thúc GET /api/kitchen/events, giữ nguyên KITCHEN cho request mở stream; clean build bản cuối **34/34 đạt**, gồm assertion log mới; toàn bộ Chromium **39/39 đạt** và Verify-Kitchen chạy lại đạt trên jar cuối. Lần đầu frontend 37/39: locator tiêu đề login sai và fixture 6.3 dùng trạng thái B02 thật sau refetch. Sau sửa có 38/39 do locator alert không phân biệt hai cảnh báo trong lúc refetch; đã làm rõ locator cảnh báo xung đột. Backend lần đầu có lỗi overload assertion lúc biên dịch test và số migration demo kỳ vọng 8 thay vì 9; sửa metadata test cho V6 rồi clean build đạt. Không bỏ test hoặc giảm assertion nghiệp vụ.
+
+### Review, phần còn lại và tự thử
+
+- Đã review service/controller/migration/security/UI/test/script về quyền, sai bàn, giá/tổng, số suất, lặp/đồng thời/rollback và mất kết nối. Giá vẫn từ ordering backend, trạng thái chỉ từ FulfillmentUnit, không có API reset hoặc thao tác 6.6. .env/.work/cookie/build/report/dependency bị ignore. git diff --check đạt. .work/scan-review.cjs quét 127 file source cùng bundle/log preview không thấy secret local đã biết hoặc mẫu private key/GitHub token; đây là quét theo giá trị/mẫu, không phải audit toàn hệ thống.
+- Preview/database local đang chạy tại http://127.0.0.1:8080/#kitchen. Tài khoản **bep**, mật khẩu DEMO_KITCHEN_PASSWORD trong .env local. Nhân viên dùng nhanvien/DEMO_STAFF_PASSWORD ở browser khác; khách dùng browser/profile riêng đã gắn mã theo README. Có thể thử đơn cũ ngay, hoặc khách gửi 3 suất mới → bếp Bắt đầu suất 1 → Xác nhận xong → thấy 1/3 còn 2 → F5/reconnect vẫn đúng.
+- README mục 6.5 có đầy đủ cách thử hai bếp/mất kết nối; Verify-Kitchen chạy biệt lập để không tạo đơn thử vào demo. Chưa cần thiết bị thật cho nghiệm thu local. Dùng iPad khác máy cần cấu hình LAN/HTTPS tin cậy/cookie Secure trước; 127.0.0.1 trên iPad trỏ về chính iPad.
+- Chưa kiểm chứng Safari/iPad thật/cảm ứng/ngủ thức thực, LAN/WAN/HTTPS, tải đủ 30 bàn, backup/restore; chỉ Windows/Chromium/localhost. Không suy khả năng vận hành tại quán từ kết quả local.
+- Chờ người dùng thử và giao chốt commit/push/CI. Bước tiếp **6.6 — nhân viên mang món**, chưa triển khai trong 6.5.
 
 ## Kết quả commit/push/CI 6.4 — 01/11/2026
 

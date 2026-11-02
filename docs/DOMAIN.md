@@ -2,12 +2,23 @@
 
 Các quy tắc dưới đây là thiết kế đề xuất cho bản đầu, trừ những yêu cầu được đánh dấu xác nhận trong PRODUCT.
 
+## Bếp đã triển khai — 6.5, 02/11/2026
+
+- Mỗi dòng gọi N suất có đúng N FulfillmentUnit, số thứ tự 1–N. Đơn 6.4 đã lưu được migration bổ sung suất chờ làm, giữ nguyên bàn/phiên/đợt/tên/giá/số lượng/ghi chú.
+- Luồng hiện thực: QUEUED (Chờ làm) → PREPARING (Đang làm) → READY (Đã xong, chờ mang). Chỉ KITCHEN còn enabled được đọc hàng đợi và chuyển trạng thái; POST có CSRF. Chưa có hủy/từ chối/nhận mang/phục vụ trong bước này.
+- Mỗi thao tác chỉ định ID suất và trạng thái đích. Không nhảy từ QUEUED tới READY, không lùi READY. Lặp đúng suất/đích hiện tại trả thành công mà không ghi lại người/thời gian; trạng thái đã đi xa hơn trả xung đột và đọc lại. Hai màn hình không thể làm vượt số suất, không dùng nút cộng số lượng chung.
+- Backend lấy người thao tác từ principal và giờ từ database; giữ người/thời điểm bắt đầu và xong. Khóa phiên dùng chung với gửi món, chỉ thao tác khi phiên OPEN hoặc CHECKOUT_PENDING; CLOSED bị chặn và không còn ở hàng đợi.
+- Hàng đợi gom theo bàn, phiên, đợt (số thứ tự trong phiên và mã đợt database), dòng món; mỗi suất có nút riêng. Trong đợt còn suất chưa xong, các suất READY vẫn hiển thị để đối chiếu tiến độ, ví dụ 1/3 đã xong, 2 chờ làm. Theo yêu cầu ngày 02/11, khi tất cả suất của tất cả món trong một đợt đều READY, đợt tự rời mục Đang xử lý và xuất hiện ở mục Đã xong · chờ mang. Chỉ lọc hiển thị, không xóa đơn/suất trong database; các đợt khác cùng bàn vẫn được xét riêng. Reload/reconnect mặc định mở Đang xử lý và phân loại lại theo snapshot server. Màn hình khách đọc tiến độ tổng hợp từ từng suất khi tải lại, không còn ghi cố định Chờ bếp.
+- Mặc định UI: đợt cũ trước, tính thời gian từ lúc gửi; cảnh báo chữ Chờ lâu sau 15 phút nếu còn suất chưa xong. Đây là ngưỡng hiển thị demo, chưa phải SLA của quán. Đợt hoàn thành được xem lại ở Đã xong · chờ mang trong phạm vi phiên còn hoạt động; chưa có thao tác nhận mang/kết thúc phiên.
+- PostgreSQL là nguồn chính; thông báo chỉ nhắc đọc lại. Mở lại, nối lại, quay về tab hoặc tải định kỳ đều đọc snapshot server. Lỗi đọc giữ dữ liệu cũ có cảnh báo và khóa thao tác; mất phản hồi chuyển suất không tự gửi một thao tác mới.
+
+
 ## Đăng nhập nhân viên/bếp đã triển khai — bước 6.2
 
 - StaffUser định danh bằng username duy nhất, tên hiển thị, mật khẩu băm BCrypt, vai trò `STAFF` hoặc `KITCHEN`, cờ enabled. Backend lấy quyền từ tài khoản PostgreSQL; frontend không tự cấp quyền.
 - `STAFF` được xem danh sách bàn và mở/xem phiên phục vụ theo bước 6.3 bên dưới; `KITCHEN` được vào khu vực bếp riêng. Hai vai trò không tự có quyền của nhau. Menu chỉ đọc công khai để giữ luồng xem menu hiện tại, chưa gắn quyền khách với phiên bàn. Chưa có quyền thu tiền/hủy/giảm hoặc quản lý tài khoản; không tạo vai trò quản lý chưa dùng.
 - Demo có hai tài khoản tổng hợp `nhanvien` và `bep`, mật khẩu riêng sinh trong `.env` local. Flyway seed chỉ profile demo, không reset hash/tên/quyền/enabled đã tồn tại; profile mặc định không tạo tài khoản mẫu. Đổi `.env` sau seed không đổi mật khẩu đã lưu; quản trị/reset để 6.10.
-- Sau đăng nhập, nhân viên vào sơ đồ bàn, bếp vào màn hình bếp. Màn hình bếp mới là điểm vào có kiểm tra quyền, chưa có hàng đợi hoặc thao tác món.
+- Sau đăng nhập, nhân viên vào sơ đồ bàn, bếp vào màn hình bếp. Ở mốc 6.2 bếp chỉ có điểm vào kiểm tra quyền; hàng đợi và thao tác từng suất hiện theo mục 6.5 phía trên.
 - Phiên phía server có thời hạn 30 phút không có request sử dụng phiên; đăng xuất thu hồi ngay, restart server buộc đăng nhập lại nhưng giữ tài khoản. Kiểm tra lại khi quay lại tab và khi gọi API; UI bỏ dữ liệu nội bộ nếu nhận 401/403, yêu cầu đăng nhập lại. Chưa có quản trị thu hồi mọi phiên/đổi quyền giữa ca; thuộc 6.10.
 - Đăng nhập sai dùng thông báo chung cho tài khoản không tồn tại, sai mật khẩu và tài khoản bị khóa; không phản hồi mật khẩu/hash. Mất kết nối khi đăng xuất phải báo chưa xác nhận được và cho thử lại.
 
@@ -40,7 +51,7 @@ Các quy tắc dưới đây là thiết kế đề xuất cho bản đầu, tr�
 - Tổng tiền tính bằng số nguyên tại server, không tin tổng/đơn giá chấp nhận do client khai. Snapshot tên món, đơn giá từ database, số lượng và ghi chú lưu trong OrderItem; sửa menu sau đó không đổi đơn. Tổng đợt không vượt giới hạn số nguyên JSON an toàn đã nêu ở menu. Tạm tính không phải hóa đơn/thu tiền.
 - Một lần xác nhận tạo một OrderBatch với khóa UUID do client giữ. Cùng phiên + cùng khóa + cùng nội dung trả đúng đợt cũ (kể cả menu đổi sau đó); khác nội dung trả `IDEMPOTENCY_CONFLICT`. Unique database và khóa phiên bảo vệ cả gửi đồng thời. Giá được kiểm tra dưới khóa catalog tới commit; lỗi giữa chừng rollback cả đợt/dòng.
 - Trước POST, client lưu lượt gửi/khóa vào localStorage theo phiên, không lưu credential ở đó. Timeout/mất phản hồi: khóa giỏ, tra bằng cùng khóa; chưa có mới cho retry cùng khóa/nội dung. Reload phục hồi lượt đang chờ. Chỉ bỏ lượt chờ khi nhận được đơn đã lưu hoặc lỗi nghiệp vụ chắc chắn từ chối; lỗi mạng/5xx không cấp khóa mới. Giỏ chưa bấm gửi chỉ ở bộ nhớ, không hứa giữ sau reload. Khi quyền khách hết hiệu lực, UI bỏ dữ liệu riêng và lượt chờ cũ khỏi máy.
-- Món đã gọi đọc từ PostgreSQL, có đợt/thời gian/tên/đơn giá/số lượng/ghi chú và trạng thái `QUEUED` (Chờ bếp). Khách không sửa/xóa món đã gửi. Chưa tạo FulfillmentUnit hoặc thao tác bếp/hủy/phục vụ; thuộc 6.5 và các bước sau.
+- Món đã gọi đọc từ PostgreSQL, có đợt/thời gian/tên/đơn giá/số lượng/ghi chú. Khách không sửa/xóa món đã gửi. Từ 6.5, tiến độ được tổng hợp từ FulfillmentUnit theo mục bếp phía trên; hủy/phục vụ chưa triển khai.
 
 ## Thuật ngữ
 

@@ -42,3 +42,5 @@
 - CI Linux cấu hình `bash ./gradlew --no-daemon clean build` tại backend sau build frontend; đọc STATUS và kết quả GitHub Actions thực tế. Không ghi CI pass chỉ từ file workflow.
 - Xem README cho thứ tự khởi động/dừng; xem STATUS cho bằng chứng và hạn chế. API bàn/mã ghép cần STAFF, bếp cần KITCHEN, POST có CSRF. Sau 6.4 khách dùng cookie riêng có hash ở database và chỉ truy cập phiên được gắn; vẫn bind localhost, chưa có HTTPS để mở LAN.
 - Kiểm tra live 6.4: `.\scripts\Verify-GuestOrdering.ps1` sau build/db, Chromium đã cài, cổng 8081 trống; script dùng database tạm riêng, không tiêu thụ bàn/đơn demo. Test UI thường mô phỏng guest để kiểm tra trạng thái lỗi, không coi mock là bằng chứng database.
+
+- Kiểm tra live 6.5: `.\scripts\Verify-Kitchen.ps1` sau build/db, Chromium, cổng 8081 trống; dùng DB tạm riêng, kiểm hai bếp/SSE/từng suất/reconnect/restart. Chạy tuần tự với Verify-GuestOrdering vì cùng cổng. Bếp mở trực ca có polling giữ session, logout khi kết thúc.

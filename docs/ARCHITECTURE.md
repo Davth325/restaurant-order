@@ -2,6 +2,22 @@
 
 Stack đã xác nhận: Java Spring Boot + Gradle, React + TypeScript, PostgreSQL. Các chi tiết triển khai bên dưới vẫn là đề xuất nếu DECISIONS chưa ghi đã xác nhận.
 
+## Fulfillment và realtime đã triển khai — 6.5, 02/11/2026
+
+- Giữ Java/Spring Boot/Gradle/React/PostgreSQL và các dependency hiện có. Flyway V6 tạo fulfillment_unit, UNIQUE(order_item_id, unit_number), trạng thái và ràng buộc người/thời gian. Backfill generate_series cho đơn cũ; bỏ order_item.status để tránh hai nguồn trạng thái. Không sửa V1–V5 hoặc seed.
+- Gửi món insert dòng và toàn bộ suất trong cùng transaction. Khách vẫn nhận hợp đồng đợt/dòng cũ, thêm progress {queued, preparing, ready}; status tổng hợp QUEUED/PREPARING/PARTIALLY_READY/READY, không ghi một trạng thái chung cho cả đợt.
+- GET /api/kitchen/orders trả {units, observedAt}, một SQL snapshot join bàn/phiên/đợt/dòng/suất; không gửi giá hoặc credential. row_number tính đợt theo phiên. Chỉ phiên hoạt động được đưa vào hàng đợi. GET cần KITCHEN và kiểm tra lại enabled/role trong database.
+- POST /api/kitchen/units/{id}/status body {status: PREPARING hoặc READY}, CSRF + KITCHEN. Service kiểm tài khoản → khóa table_session FOR UPDATE OF s (cùng thứ tự với ordering/checkout tương lai) → kiểm phiên và trạng thái hiện tại → UPDATE có điều kiện. Thành công 204, lặp cùng đích không ghi thêm; sai luồng 409, đích lạ 400, không có suất 404, DB lỗi 503. Actor/time hoàn toàn từ backend.
+- GET /api/kitchen/events dùng SseEmitter cùng cookie đăng nhập và quyền KITCHEN; no-store, X-Accel-Buffering: no. ApplicationEventPublisher + TransactionalEventListener AFTER_COMMIT gửi invalidation changed sau lưu đợt hoặc đổi suất; không phát dữ liệu trước commit. Stream chỉ gửi connected/changed/heartbeat, không chứa payload đơn.
+- Request mở SSE vẫn cần KITCHEN; riêng dispatch ASYNC nội bộ GET /api/kitchen/events được phép hoàn tất response đã mở kể cả session vừa logout, tránh lỗi quyền trên response đã commit. Không mở quyền REQUEST/endpoint khác. Tham khảo [Spring Security: matching by dispatcher type](https://docs.spring.io/spring-security/reference/servlet/authorization/authorize-http-requests.html).
+- Heartbeat 10 giây kiểm session còn hiệu lực và enabled/role; logout/thu hồi đóng stream. Mỗi kết nối tối đa 60 giây rồi EventSource nối lại qua security filter. Không lưu/replay event trong RAM như nguồn đơn, không dùng Last-Event-ID để dựng trạng thái. Mô hình một JVM local hiện tại; nhiều server chưa được hỗ trợ.
+- UI phân loại đợt theo snapshot hiện có: mọi suất READY thì vào Đã xong · chờ mang, còn lại vào Đang xử lý. Không lưu cờ ẩn local hoặc xóa đơn; API/database/realtime giữ nguyên.
+- Client tải snapshot ban đầu và mỗi connected/changed; dự phòng mỗi 15 giây khi trang đang hiển thị, khi focus/visibility/online. Watchdog 25 giây không heartbeat sẽ mở lại stream. Request cũ bị abort, không ghi đè snapshot mới. Lỗi stream báo riêng; REST vẫn dùng được qua polling. Lỗi REST đánh dấu snapshot cũ và khóa nút, không suy từ navigator.onLine. Sau POST luôn đọc lại, không tăng số lượng lạc quan hoặc tự POST lại.
+- Trang bếp đang mở có polling chủ động nên giữ HTTP session hoạt động; khác màn hình chỉ tải thủ công 6.2. Đây là lựa chọn cho màn hình bếp trực ca; vẫn có Đăng xuất và restart buộc đăng nhập lại. Giữ localhost/HTTP demo; chưa cấu hình LAN/HTTPS.
+
+Các đoạn M1–6.4 dưới đây ghi kiến trúc tại thời điểm đó; cơ chế bếp/realtime hiện tại theo mục 6.5 này.
+
+
 ## Bộ khung M1 đã triển khai
 
 - Java 21, Spring Boot 4.1.2, Gradle Wrapper 9.8.2; phiên bản frontend/database ở DEVELOPMENT. Không dùng Gradle toàn máy.

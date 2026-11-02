@@ -18,6 +18,11 @@ public class SecurityConfiguration {
         return http
                 .authorizeHttpRequests(access -> access
                         .dispatcherTypeMatchers(DispatcherType.ERROR).permitAll()
+                        // Finish an already-authorized SSE response even if logout invalidated its
+                        // session. Initial REQUEST dispatches still require KITCHEN below.
+                        .requestMatchers(request -> request.getDispatcherType() == DispatcherType.ASYNC
+                                && request.getMethod().equals("GET")
+                                && request.getRequestURI().equals(request.getContextPath() + "/api/kitchen/events")).permitAll()
                         .requestMatchers(HttpMethod.GET, "/", "/index.html", "/assets/**", "/menu-images/**", "/favicon.svg", "/favicon.ico",
                                 "/actuator/health", "/api/menu", "/api/auth/csrf").permitAll()
                         .requestMatchers("/api/auth/login").permitAll()

@@ -1,5 +1,14 @@
 # Vận hành và phục hồi
 
+## Bếp local sau 6.5
+
+- V6 tự bổ sung từng suất cho đơn 6.4 đã lưu, giữ bàn/đơn/tiền cũ; backup/migration khi dùng thật vẫn theo quy trình bên dưới. Không reset volume để thấy món ở bếp.
+- SSE chỉ là thông báo, snapshot PostgreSQL khôi phục sau reconnect/restart. Bếp mở trực ca sẽ polling giữ phiên login hoạt động; dùng Đăng xuất khi kết thúc ca. Restart yêu cầu bếp login lại, không xóa tiến độ suất.
+- Verify-Kitchen.ps1 dùng DB verify_kitchen_<guid> và port 8081 riêng; chạy tuần tự với Verify-GuestOrdering.ps1 vì cùng cổng. Cookie/snapshot thử trong .work/kitchen-live-state.json bị ignore. Không chia sẻ dữ liệu thử hoặc .env.
+- Khi API lỗi, bếp thấy cảnh báo dữ liệu cũ và nút bị khóa; đối chiếu trạng thái mới trước làm tiếp. Nếu hệ thống chưa phục hồi, quy trình giấy cần người điều phối để tránh làm trùng; chưa có tự đồng bộ giấy.
+- Vẫn chỉ localhost; thử iPad thật cần LAN/HTTPS tin cậy và cookie Secure trước, chưa nằm trong 6.5.
+
+
 ## Tablet/đơn local sau 6.4
 
 - V5 thêm credential khách và đơn vào PostgreSQL, không thay/reset bảng/phiên cũ. Giữ volume/.env, dừng preview trước build. Khách còn cookie hợp lệ vẫn vào lại đúng phiên sau restart jar; nhân viên vẫn phải đăng nhập lại. Thời hạn/quyền thiết bị và xử lý mất phản hồi theo DOMAIN; không xóa cookie/localStorage lúc lượt gửi chưa rõ kết quả.

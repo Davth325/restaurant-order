@@ -1,6 +1,6 @@
 # Kiểm thử và điều kiện nghiệm thu
 
-Hiện có integration test PostgreSQL/Testcontainers và E2E Chromium tới bước 6.4: schema/seed/menu/bàn, đăng nhập 6.2, mở phiên 6.3, tablet và gửi món 6.4. Kết quả thực tế ở STATUS, cách chạy ở README. Các mục ghi “giai đoạn sau” cùng kịch bản bếp/tiền/mạng chưa triển khai vẫn là yêu cầu, không được coi là đã kiểm tra.
+Hiện có integration test PostgreSQL/Testcontainers và E2E Chromium tới bước 6.5: schema/seed/menu/bàn, đăng nhập 6.2, mở phiên 6.3, tablet và gửi món 6.4, bếp/từng suất/SSE 6.5. Kết quả thực tế ở STATUS, cách chạy ở README. Các mục ghi “giai đoạn sau” cùng kịch bản bếp/tiền/mạng chưa triển khai vẫn là yêu cầu, không được coi là đã kiểm tra.
 
 ## Kiểm tra bộ khung M1
 
@@ -39,7 +39,7 @@ Hiện có integration test PostgreSQL/Testcontainers và E2E Chromium tới bư
 - Anonymous 401/bếp 403 khi có CSRF hợp lệ; thiếu CSRF 403; bàn không tồn tại 404/chờ dọn 409; dữ liệu lệch AVAILABLE nhưng có phiên hoạt động cũng bị chặn. Lỗi insert sau update bàn phải rollback, API trả 503 không lộ SQL/credential.
 - `table-sessions.spec.ts`: login thật, mô phỏng response đọc/mở bàn cho UI xác nhận đúng B01/B02, actor/time/phiên, reload, xung đột 409, mất phản hồi không POST lại, khóa double-click, lỗi đọc trạng thái, phiên login hết hạn, cảnh báo snapshot cũ khi thử lại, chờ dọn và bố cục tablet/mobile. Không coi các mock này là bằng chứng transaction/database; bằng chứng đó thuộc test backend và kiểm tra live riêng ghi ở STATUS.
 - E2E menu/bàn/auth cũ vẫn chạy API thật. Test UI mới không tiêu thụ bàn trống hoặc xóa phiên trên volume demo. Kiểm tra live UI → API → database và restart dùng database kiểm thử riêng, giữ B01 demo trống cho chủ dự án thử.
-- Tự thử theo README. Chưa có API đóng/dọn nên không dùng xóa session/reset volume demo làm bước nghiệm thu. Kết quả/lệnh đã chạy thực tế và giới hạn thiết bị/CI ghi ở STATUS.
+- Tự thử theo README. Chưa có API đóng/dọn nên không dùng xóa session/reset volume demo làm bước nghiệm thu. Kết quả/lệnh đã chạy thực tế và giới hạn thiết bị/CI ghi ở STATUS. Fixture UI giữ trạng thái bàn mô phỏng độc lập với dữ liệu demo có khách, gồm cả sau đọc lại mất phản hồi.
 
 ## Tablet khách và gửi món — 6.4
 
@@ -49,6 +49,16 @@ Hiện có integration test PostgreSQL/Testcontainers và E2E Chromium tới bư
 - `guest.spec.ts` dùng mock guest để kiểm tra UI giỏ/xem lại/double-click, mất response rồi tra khóa, reload pending và gửi lại cùng nội dung, lỗi giá/món hết yêu cầu xem lại, quyền hết bỏ dữ liệu, browser STAFF bị chặn và ba kích thước dọc/ngang/phone. Menu/CSRF vẫn từ API thật. Không gọi mock là bằng chứng transaction/database.
 - **Live cách ly demo**: `.\scripts\Verify-GuestOrdering.ps1` (sau build/db, Chromium, cổng 8081 trống) tạo database riêng → staff mở B01/B02 và cấp mã qua UI → hai BrowserContext nhập mã → hai giỏ gửi và reload → sửa ID/giá/tổng/khóa → chặn response sau request đã commit → lỗi trước commit và tra khóa không tới được, reload rồi retry cùng khóa → restart jar với cookie đã lưu → đối chiếu toàn bộ đơn, count/sum DB. Dọn database riêng trong finally; không thao tác bàn/đơn demo.
 - Hồi quy menu/auth/bàn/sidebar chạy cùng suite thường. Số test và lệnh/kết quả thực tế chỉ ghi ở STATUS; không suy CI/Linux/Safari/thiết bị thật từ test Windows/Chromium.
+
+## Màn hình bếp — 6.5
+
+- KitchenIntegrationTests dùng PostgreSQL/Testcontainers, HTTP/cookie/CSRF thật: bàn/đợt/ghi chú, 3 suất và hoàn thành 1, lặp đích không thay actor/time, sai luồng không lùi/nhảy, tài khoản bị vô hiệu, phiên đóng, anonymous/STAFF/guest/thiếu CSRF bị từ chối.
+- Hai HTTP session bếp chờ cùng khóa phiên thật (đối chiếu pg_stat_activity) cho cả PREPARING và READY; kết quả đúng READY/QUEUED/QUEUED. Không coi hai lời gọi tuần tự là kiểm chứng tranh chấp.
+- Ép lỗi insert suất thứ hai: rollback toàn batch/dòng/suất. Kiểm tra migration schema riêng từ V5 có đơn cũ lên V6: giữ nguyên dữ liệu và bổ sung đúng 3 suất. Stream HTTP thật kiểm connected/changed, snapshot đã commit và logout đóng stream mà không có AuthorizationDeniedException/response already committed trong log server; assertion log được kiểm tra thất bại trên code trước sửa.
+- kitchen.spec.ts mock snapshot/mutation để thử bố cục 768×1024, 1024×768, 375×812; ghi chú dài, 1/3, nút ≥44px, snapshot cũ/khóa nút/phục hồi, xung đột và hết phiên. Bổ sung ca một món xong nhưng món khác trong đợt còn làm, hoàn thành suất cuối mới chuyển mục, đợt khác cùng bàn giữ nguyên, mở xem lại và reload không mất đợt. Mock chỉ là bằng chứng UI, không thay PostgreSQL.
+- scripts/Verify-Kitchen.ps1 chạy jar ở 8081 trên database verify_kitchen_<guid> riêng: STAFF mở/gắn hai bàn qua UI, khách gửi thật, hai bếp SSE, hoàn thành 1/3, mất response đã commit, reload, chặn SSE/polling, offline khóa rồi refetch, guest đọc tiến độ, restart jar/login lại và so toàn bộ suất/đơn. Bổ sung hoàn thành B02 đợt 1 qua UI: biến khỏi hàng đợi cả hai bếp (kể cả polling), mở xem lại, reload và restart vẫn có trong mục đã xong; B01 2/3 vẫn ở đang xử lý. Đối chiếu DB 3 đợt/225.000đ/5 suất/3 READY; dọn đúng DB tạm, không tiêu thụ dữ liệu demo.
+- Hồi quy toàn bộ test cũ và Verify-GuestOrdering.ps1. Lệnh/kết quả thực tế và giới hạn ở STATUS; không suy CI hoặc Safari/iPad/LAN từ test local.
+
 
 ## Luồng chính (giai đoạn sau)
 
