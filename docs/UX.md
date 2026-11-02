@@ -9,6 +9,7 @@
 - Xung đột có thông báo rồi đọc lại từ server. Mất response giữ lượt gửi qua reload và khóa nhận/giao mới; Kiểm tra và thử lại tra biên nhận trước, chỉ thử lại đúng lượt nếu chưa lưu. Lỗi snapshot giữ dữ liệu có cảnh báo và khóa thao tác; mất SSE vẫn polling 15 giây, focus/reconnect đọc lại.
 - Nhân viên nhận thông tin trực tiếp qua SSE; quản lý có cùng snapshot để giám sát. Bếp thấy nhãn Đang mang/Đã phục vụ, khách bấm Tải lại món đã gọi để thấy số suất chờ mang/đang mang/đã phục vụ trong phiên mình.
 - Nút ≥48px, thẻ một cột khi hẹp. Điều hướng Mang món chỉ hiện cho STAFF/MANAGER; vùng sidebar thấp ≤500px ẩn nhãn trang trí để giữ Đăng xuất trong tầm nhìn, vẫn cuộn ở chiều cao cực thấp. Chưa thay thế thử Safari/iPad thật.
+- Mobile ≤620px dùng điều hướng hai cột có thể xuống dòng theo nhãn; không ép bốn mục trong một hàng. Giữ vùng bấm ≥44px và header dưới 300px ở vùng xem 375×812 khi thay font Segoe UI/Arial/Verdana/sans-serif, tránh tràn ngang trên Linux và hệ thống không có Segoe UI.
 
 ## Màn hình bếp đã triển khai — 6.5, 02/11/2026
 

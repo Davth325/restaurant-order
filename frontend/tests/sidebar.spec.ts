@@ -44,7 +44,13 @@ test('mobile header stays in document flow without filling the screen', async ({
   await page.setViewportSize({ width: 375, height: 812 })
   await page.goto('/#tables')
   await expect(page.getByTestId('table-card')).toHaveCount(30)
-  const sidebar = await page.locator('.sidebar').boundingBox()
-  expect(sidebar!.height).toBeLessThan(300)
-  expect(await page.evaluate(() => document.documentElement.scrollWidth <= innerWidth)).toBeTruthy()
+  // Linux falls back to Arial/sans-serif; its wider labels exposed overflow missed by Segoe UI.
+  for (const font of ['Segoe UI', 'Arial', 'Verdana', 'sans-serif']) {
+    const family = font === 'sans-serif' ? font : `'${font}'`
+    await page.addStyleTag({ content: `.main-nav a { font-family: ${family} !important; }` })
+    const sidebar = await page.locator('.sidebar').boundingBox()
+    expect(sidebar!.height, font).toBeLessThan(300)
+    expect(await page.evaluate(() => document.documentElement.scrollWidth <= innerWidth), font).toBeTruthy()
+    expect(await page.locator('.main-nav a').evaluateAll(links => links.every(link => link.getBoundingClientRect().height >= 44)), font).toBeTruthy()
+  }
 })
