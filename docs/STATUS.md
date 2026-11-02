@@ -1,6 +1,13 @@
 # Trạng thái hiện tại
 
-Cập nhật mới nhất: **02/11/2026 — người dùng đã thử và nghiệm thu 6.5, gồm tự ẩn đợt xong và mở xem lại.** Đang chốt commit/push và kiểm tra CI đúng commit mới; chưa có kết quả CI 6.5 tại thời điểm ghi mục nghiệm thu này. Bước tiếp: **6.6 — nhân viên mang món**. Các ghi chú chờ thử bên dưới là lịch sử.
+Cập nhật mới nhất: **02/11/2026 — 6.5 đã được người dùng nghiệm thu, commit/push và CI Linux thành công cho commit chức năng 80c3c04.** Bao gồm từng suất, realtime và tự ẩn đợt xong với mục mở xem lại. Bước tiếp: **6.6 — nhân viên mang món**. Các mục chờ thử/chờ chốt bên dưới là lịch sử.
+
+## Kết quả commit/push/CI 6.5 — 02/11/2026
+
+- **Commit chức năng:** [80c3c04aba969f482be1112d7a6ae2e2ce6de541 — feat: add realtime per-portion kitchen workflow](https://github.com/Davth325/restaurant-order/commit/80c3c04aba969f482be1112d7a6ae2e2ce6de541), 28 file thay đổi. Push fast-forward **61bf8fd..80c3c04** lên main thành công; local/origin đồng bộ 0 ahead/behind, cây làm việc sạch sau commit/push. Không force push, không đổi code sau bản đã nghiệm thu.
+- **CI thực tế:** [Build and test — run 41382225734](https://github.com/Davth325/restaurant-order/actions/runs/41382225734), event push, head_sha=80c3c04aba969f482be1112d7a6ae2e2ce6de541, **completed/success**. [Job verify 125075305804](https://github.com/Davth325/restaurant-order/actions/runs/41382225734/job/125075305804) xác nhận frontend checks/build, backend clean build/PostgreSQL tests, chuẩn bị demo, chạy jar, browser flow và dừng database đều success. Không bỏ/giảm kiểm tra để làm xanh.
+- Kết quả trên áp dụng đúng commit chức năng 6.5 gồm sửa đợt xong tự rời Đang xử lý và mở Đã xong · chờ mang. Commit ghi bằng chứng CI chỉ thay STATUS; không lấy run chức năng để suy kết quả run của commit tài liệu.
+- **Bàn giao:** người dùng đã thử và xác nhận chốt. Giữ preview/database hiện có tại http://127.0.0.1:8080/#kitchen; không xóa dữ liệu bàn/đơn đã thử. Không còn code 6.5 đang dở chặn bàn giao local. Giới hạn Safari/iPad thật/LAN/HTTPS/tải/backup giữ nguyên. Bước tiếp **6.6 — nhân viên mang món**, chưa tự triển khai.
 
 ## Chốt nghiệm thu 6.5 — 02/11/2026
 
