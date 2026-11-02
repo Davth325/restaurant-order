@@ -1,6 +1,17 @@
 # Trạng thái hiện tại
 
-Cập nhật mới nhất: **02/11/2026 — người dùng giao chốt 6.6 với điều kiện nhân viên không có mục Đã phục vụ.** Đã xác minh UI/API thật của nhanvien/nhanvien2 đều chỉ có Chờ mang/Đang mang; quản lý xem Đã phục vụ và lịch sử. Đang chốt commit/push và kiểm tra CI, chỉ ghi kết quả khi thực sự hoàn tất. Bước tiếp: **6.7 — gọi thêm và ngoại lệ**.
+Cập nhật mới nhất: **02/11/2026 — 6.6 đã chốt, commit/push và CI Linux thành công tại f9b3ce0.** Nhân viên chỉ có Chờ mang/Đang mang của mình; quản lý có Đã phục vụ và lịch sử. Đã sửa thêm tràn điều hướng mobile do CI phát hiện, giữ nguyên nghiệp vụ đã thử. Bước tiếp: **6.7 — gọi thêm và ngoại lệ**, chưa tự triển khai.
+
+## Kết quả commit/push/CI 6.6 — 02/11/2026
+
+- **Commit chức năng:** [51e31b8f917fc99ea446b8a6a01906649d838750 — feat: add staff pickup and per-portion serving workflow](https://github.com/Davth325/restaurant-order/commit/51e31b8f917fc99ea446b8a6a01906649d838750), 40 file; bao gồm nhận/giao/trả từng suất, lịch sử, phân quyền API/UI và các phản hồi đã chốt. Push fast-forward từ 40c50c0, không force push. CI đầu phát hiện lỗi mobile, đã ghi rõ ở mục dưới.
+- **Commit sửa CI:** [f9b3ce0ee07b16aac41fd46b2e2c49afe0c3d2a8 — fix: wrap mobile navigation across system fonts](https://github.com/Davth325/restaurant-order/commit/f9b3ce0ee07b16aac41fd46b2e2c49afe0c3d2a8), 5 file; chỉ CSS mobile hai cột, tăng cường test font và tài liệu. Không đổi quyền/transaction/tiền hoặc bỏ/nới kiểm thử. Push fast-forward 51e31b8..f9b3ce0 thành công, working tree sạch và local/origin khớp 0 ahead/behind trước ghi bằng chứng này.
+- **CI thực tế:** [Build and test — run 41465157264](https://github.com/Davth325/restaurant-order/actions/runs/41465157264), event push, head_sha=f9b3ce0ee07b16aac41fd46b2e2c49afe0c3d2a8, **completed/success**. [Job verify 125343960948](https://github.com/Davth325/restaurant-order/actions/runs/41465157264/job/125343960948) và toàn bộ frontend checks/build, Gradle clean build/PostgreSQL tests, chuẩn bị demo, chạy jar, browser flow và dừng database đều success. Đây là CI đúng bản cuối 6.6, không lấy run cũ/failed làm bằng chứng.
+- Log job đã lưu .work/github-job-125343960948.log (Git ignore) để đối chiếu. Local bản cuối có 42 backend test đạt trước sửa CSS, 48/48 UI sau sửa CSS và test nhiều font riêng đạt; bằng chứng live hai nhân viên/manager/lost response/reload/restart ở mục D027. Phần đóng gói CSS không thay database hoặc nghiệp vụ backend đã kiểm.
+- Bản commit ghi bằng chứng này chỉ sửa STATUS, dùng nhãn **[skip ci]** để không lặp lại build cho tài liệu; CI success nêu trên áp dụng chính xác commit code f9b3ce0. Không thay code sau CI thành công, không sửa workflow hay bỏ kiểm thử để làm xanh.
+- **Bàn giao:** user đã giao chốt sau yêu cầu bỏ Đã phục vụ ở nhân viên. UI/API thực của cả nhanvien/nhanvien2 đã kiểm không có tab/lịch sử; quản lý xem đầy đủ. Preview/database được giữ chạy tại http://127.0.0.1:8080/#serving, health UP, không reset đơn người dùng. Cửa sổ cũ cần Ctrl+F5 để lấy UI mới; không xóa storage khi có pending. Không còn việc 6.6 đang dở chặn bàn giao local. Giới hạn Safari/iPad/LAN/HTTPS/tải/backup giữ nguyên; bước tiếp 6.7 chưa bắt đầu.
+
+Các mục đang chờ/chưa commit hoặc CI lỗi bên dưới là lịch sử trước kết quả thành công này.
 
 ## Chốt nghiệm thu 6.6 — 02/11/2026
 
