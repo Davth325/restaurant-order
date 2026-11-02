@@ -1,4 +1,4 @@
-export type Staff = { username: string; displayName: string; role: 'STAFF' | 'KITCHEN' }
+export type Staff = { username: string; displayName: string; role: 'STAFF' | 'KITCHEN' | 'MANAGER' }
 
 export async function api(path: string, options: RequestInit = {}) {
   const timeout = AbortSignal.timeout(10000)
@@ -25,6 +25,6 @@ export async function currentStaff(): Promise<Staff | null> {
   if (response.status === 401) return null
   if (!response.ok) throw new Error('Chưa kiểm tra được phiên đăng nhập. Vui lòng thử lại.')
   const staff: Staff = await response.json()
-  if (!staff.username || !staff.displayName || !['STAFF', 'KITCHEN'].includes(staff.role)) throw new Error('Phiên đăng nhập không hợp lệ.')
+  if (!staff.username || !staff.displayName || !['STAFF', 'KITCHEN', 'MANAGER'].includes(staff.role)) throw new Error('Phiên đăng nhập không hợp lệ.')
   return staff
 }

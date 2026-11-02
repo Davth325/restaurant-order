@@ -3,6 +3,7 @@ import MenuPage from './MenuPage'
 import TablesPage from './TablesPage'
 import LoginPage from './LoginPage'
 import KitchenPage from './KitchenPage'
+import ServingPage from './ServingPage'
 import GuestPage from './GuestPage'
 import { authPost, currentStaff, type Staff } from './auth'
 import './App.css'
@@ -15,9 +16,9 @@ function App() {
   const [sessionError, setSessionError] = useState('')
   const [loggingOut, setLoggingOut] = useState(false)
   const version = useRef(0)
-  const protectedPage = route === '#tables' || route === '#kitchen'
+  const protectedPage = route === '#tables' || route === '#kitchen' || route === '#serving'
   const showTables = route === '#tables'
-  const home = staff?.role === 'KITCHEN' ? '#kitchen' : '#tables'
+  const home = staff?.role === 'KITCHEN' ? '#kitchen' : staff?.role === 'MANAGER' ? '#serving' : '#tables'
 
   const expired = useCallback(() => {
     version.current++
@@ -72,7 +73,7 @@ function App() {
     setChecking(false)
     setNotice('')
     setSessionError('')
-    window.location.hash = user.role === 'STAFF' ? '#tables' : '#kitchen'
+    window.location.hash = user.role === 'STAFF' ? '#tables' : user.role === 'MANAGER' ? '#serving' : '#kitchen'
   }
   const logout = async () => {
     version.current++
@@ -92,12 +93,13 @@ function App() {
     }
   }
 
-  const allowed = staff && ((showTables && staff.role === 'STAFF') || (route === '#kitchen' && staff.role === 'KITCHEN'))
+  const allowed = staff && ((showTables && staff.role === 'STAFF') || (route === '#kitchen' && staff.role === 'KITCHEN') || (route === '#serving' && ['STAFF', 'MANAGER'].includes(staff.role)))
   let content
   if (protectedPage && checking) content = <main><p role="status">Đang kiểm tra phiên đăng nhập…</p></main>
   else if (protectedPage && sessionError && !staff) content = <main><div className="error-banner" role="alert"><p>{sessionError}</p><button onClick={() => void checkSession()}>Thử lại</button></div></main>
   else if ((protectedPage || route === '#login') && !staff) content = <LoginPage onLogin={loggedIn} notice={notice} />
   else if (protectedPage && !allowed) content = <main className="internal-page"><h1>Không có quyền truy cập</h1><p className="intro">Tài khoản này không có quyền vào khu vực được chọn.</p><a className="text-link" href={home}>Về khu vực làm việc</a></main>
+  else if (route === '#serving' && staff) content = <ServingPage key={staff.username} staff={staff} onUnauthorized={expired} />
   else if (showTables) content = <TablesPage onUnauthorized={expired} />
   else if (route === '#kitchen') content = <KitchenPage onUnauthorized={expired} />
   else if (route === '#login' && staff) content = <main className="internal-page"><h1>Đã đăng nhập</h1><a className="text-link" href={home}>Về khu vực làm việc</a></main>
@@ -122,6 +124,7 @@ function App() {
           <a href="#menu" className={route === '#menu' ? 'nav-current' : ''} aria-current={route === '#menu' ? 'page' : undefined}><span aria-hidden="true">☷</span> Thực đơn</a>
           <a href="#tables" className={showTables ? 'nav-current' : ''} aria-current={showTables ? 'page' : undefined}><span aria-hidden="true">▦</span> Sơ đồ bàn</a>
           <a href="#kitchen" className={route === '#kitchen' ? 'nav-current' : ''} aria-current={route === '#kitchen' ? 'page' : undefined}><span aria-hidden="true">♨</span> Khu vực bếp</a>
+          {staff && ['STAFF', 'MANAGER'].includes(staff.role) && <a href="#serving" className={route === '#serving' ? 'nav-current' : ''} aria-current={route === '#serving' ? 'page' : undefined}><span aria-hidden="true">↗</span> Mang món</a>}
           {!staff && <a href="#login" className={route === '#login' ? 'nav-current' : ''}>Đăng nhập nội bộ</a>}
         </nav>
         <div className="sidebar-note">
@@ -129,12 +132,12 @@ function App() {
           <strong>Hương vị thân quen.</strong>
           <p>Món ngon mỗi ngày,<br />ấm lòng mỗi bữa.</p>
         </div>
-        <div className="sidebar-footer"><span className="avatar">BN</span><div>{staff?.displayName ?? 'Nhà hàng demo'}<small>{staff ? (staff.role === 'STAFF' ? 'Nhân viên' : 'Bếp') : '30 bàn · 1 khu bếp'}</small></div></div>
+        <div className="sidebar-footer"><span className="avatar">BN</span><div>{staff?.displayName ?? 'Nhà hàng demo'}<small>{staff ? (staff.role === 'STAFF' ? 'Nhân viên' : staff.role === 'MANAGER' ? 'Quản lý' : 'Bếp') : '30 bàn · 1 khu bếp'}</small></div></div>
         {staff && <button className="logout-button" disabled={loggingOut} onClick={() => void logout()}>{loggingOut ? 'Đang đăng xuất…' : 'Đăng xuất'}</button>}
       </aside>
       <div className="workspace">
         <header className="topbar">
-          <span>Nhà hàng <span className="breadcrumb">/</span> <strong>{showTables ? 'Sơ đồ bàn' : route === '#kitchen' ? 'Bếp' : route === '#login' ? 'Đăng nhập' : 'Thực đơn'}</strong></span>
+          <span>Nhà hàng <span className="breadcrumb">/</span> <strong>{showTables ? 'Sơ đồ bàn' : route === '#kitchen' ? 'Bếp' : route === '#serving' ? 'Mang món' : route === '#login' ? 'Đăng nhập' : 'Thực đơn'}</strong></span>
           <span className="demo-tag">BẢN DEMO</span>
         </header>
         {sessionError && staff && <div className="error-banner" role="alert">{sessionError}</div>}

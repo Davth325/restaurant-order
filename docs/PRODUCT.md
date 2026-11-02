@@ -2,6 +2,10 @@
 
 ## Đã xác nhận
 
+Ngày 02/11/2026, chủ dự án giao **6.6 — nhân viên nhận mang và xác nhận phục vụ**: hàng chờ theo bàn/món/suất/thời gian, tách bếp xong/nhận mang/đã phục vụ, chỉ một người nhận cùng suất, trả lại có quyền và lịch sử, giao từng phần, nhân viên nhận thông tin trực tiếp và quản lý giám sát. Đã triển khai, người dùng giao chốt sau các phản hồi thử; chính sách quyền chi tiết ở DOMAIN, bằng chứng kiểm tra/commit/CI ở STATUS. Chưa triển khai 6.7.
+
+Phản hồi thử 6.6 cùng ngày xác nhận: nhân viên chỉ xem món mình đang mang và hàng chờ chung; Đã phục vụ/lịch sử chỉ quản lý xem. Phạm vi đọc được áp dụng ở API và UI theo DOMAIN/D027.
+
 Demo trước rồi triển khai thực tế; 30 bàn, một khu bếp; khách dùng tablet được chuẩn bị sẵn; gọi thêm món; bếp xác nhận món xong; nhân viên phục vụ; quản lý theo dõi; tiền mặt và QR xác nhận tay. Java Spring Boot + Gradle, React + TypeScript, PostgreSQL, GitHub. Có phương án tiếp tục phục vụ khi mất Internet. Máy chủ tại quán để chạy qua LAN khi mất WAN vẫn là kiến trúc đề xuất theo yêu cầu ngày 29/10/2026.
 
 Khi giao thực hiện M1 ngày 29/10/2026, chủ dự án xác nhận thêm Java 21 và Vite; môi trường PostgreSQL phát triển dùng Docker Desktop + Compose. Bộ khung M1 chưa thay đổi phạm vi nghiệp vụ đề xuất dưới đây.

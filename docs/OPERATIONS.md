@@ -1,5 +1,15 @@
 # Vận hành và phục hồi
 
+## Nhận mang local sau 6.6
+
+- Sau cập nhật jar, tải lại từng cửa sổ bằng Ctrl+F5 để thay mã UI đang chạy trong bộ nhớ, rồi đăng nhập lại nếu server vừa restart. Header index hiện no-store không tự thay JavaScript của tab đã mở. Không xóa cookie/localStorage khi còn thao tác chưa rõ kết quả. Backend hiện lọc scope theo principal nên client cũ đọc lại cũng không nhận suất người khác hoặc SERVED của workspace STAFF; lịch sử trả 403 cho STAFF.
+
+- Chạy Initialize-Dev trước khởi động bản mới để thêm DEMO_STAFF2_PASSWORD và DEMO_MANAGER_PASSWORD mà giữ secret cũ. V7/seed mới chỉ bổ sung schema và hai tài khoản nhanvien2/quanly; không reset bàn/đơn/tiến độ bếp. Không sửa mật khẩu .env sau seed để kỳ vọng tài khoản tự đổi.
+- Tất cả ghi serving có lịch sử cùng transaction. Khi mất response, giữ localStorage pending theo username, đọc biên nhận từ server và thử lại cùng khóa/phiên bản nếu chưa lưu. Không xóa dữ liệu trình duyệt hoặc đánh dấu giao tay bằng thao tác mới khi chưa đối chiếu. Với suất thực tế chưa giao, chủ suất/quản lý có thể trả hàng có lý do; suất SERVED cần ngoại lệ 6.7, chưa có thao tác sửa.
+- Nhân viên/quản lý mở trực ca có polling giữ login hoạt động như bếp; logout cuối ca. Restart mất login, không mất người/giờ nhận/giao hoặc lịch sử. Khách vẫn dùng credential riêng theo phiên và Tải lại món đã gọi.
+- Verify-Serving.ps1 dùng DB verify_serving_<guid> và 8081 riêng; chạy tuần tự với hai verifier cũ. .work/serving-live-state.json chứa cookie thử và bị ignore. Không chia sẻ .env hoặc snapshot cookie. Giữ localhost/HTTPS chưa cấu hình; thử thiết bị thật theo điều kiện LAN phía dưới.
+
+
 ## Bếp local sau 6.5
 
 - V6 tự bổ sung từng suất cho đơn 6.4 đã lưu, giữ bàn/đơn/tiền cũ; backup/migration khi dùng thật vẫn theo quy trình bên dưới. Không reset volume để thấy món ở bếp.

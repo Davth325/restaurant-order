@@ -2,9 +2,9 @@ import { useCallback, useEffect, useRef, useState } from 'react'
 import { api, jsonPost } from './auth'
 import './KitchenPage.css'
 
-type Unit = { id: number; itemId: number; number: number; status: 'QUEUED' | 'PREPARING' | 'READY'; batchId: number; batchNumber: number; sessionId: number; tableCode: string; createdAt: string; name: string; quantity: number; note: string }
+type Unit = { id: number; itemId: number; number: number; status: 'QUEUED' | 'PREPARING' | 'READY' | 'PICKED_UP' | 'SERVED'; batchId: number; batchNumber: number; sessionId: number; tableCode: string; createdAt: string; name: string; quantity: number; note: string }
 type Snapshot = { units: Unit[]; observedAt: string }
-const labels = { QUEUED: 'Chờ làm', PREPARING: 'Đang làm', READY: 'Đã xong' }
+const labels = { QUEUED: 'Chờ làm', PREPARING: 'Đang làm', READY: 'Đã xong', PICKED_UP: 'Đang mang', SERVED: 'Đã phục vụ' }
 
 export default function KitchenPage({ onUnauthorized }: { onUnauthorized: () => void }) {
   const [snapshot, setSnapshot] = useState<Snapshot | null>(null)
@@ -75,7 +75,7 @@ export default function KitchenPage({ onUnauthorized }: { onUnauthorized: () => 
   }, [load])
 
   const transition = async (unit: Unit) => {
-    if (acting.current || stale || unit.status === 'READY') return
+    if (acting.current || stale || !['QUEUED', 'PREPARING'].includes(unit.status)) return
     acting.current = true
     setBusy(true)
     setMessage('')
@@ -106,8 +106,8 @@ export default function KitchenPage({ onUnauthorized }: { onUnauthorized: () => 
     const items = batches.get(unit.batchId)!
     items.set(unit.itemId, [...(items.get(unit.itemId) ?? []), unit])
   }
-  const activeBatches = [...batches].filter(([, items]) => [...items.values()].some(units => units.some(unit => unit.status !== 'READY')))
-  const readyBatches = [...batches].filter(([, items]) => [...items.values()].every(units => units.every(unit => unit.status === 'READY')))
+  const activeBatches = [...batches].filter(([, items]) => [...items.values()].some(units => units.some(unit => ['QUEUED', 'PREPARING'].includes(unit.status))))
+  const readyBatches = [...batches].filter(([, items]) => [...items.values()].every(units => units.every(unit => !['QUEUED', 'PREPARING'].includes(unit.status))) && [...items.values()].some(units => units.some(unit => unit.status !== 'SERVED')))
   const visibleBatches = view === 'active' ? activeBatches : readyBatches
   const count = (status: Unit['status']) => snapshot?.units.filter(u => u.status === status).length ?? 0
   return <main className="internal-page kitchen-page">
@@ -116,23 +116,23 @@ export default function KitchenPage({ onUnauthorized }: { onUnauthorized: () => 
     {snapshot && <p className="kitchen-observed">Đọc gần nhất: {new Date(snapshot.observedAt).toLocaleTimeString('vi-VN')}</p>}
     {message && <p className="kitchen-message" role="alert">{message}</p>}
     {stale && <div className="error-banner" role="alert">{snapshot ? 'Dữ liệu có thể đã cũ. Nối lại máy chủ rồi tải lại để kiểm tra trước khi làm tiếp.' : 'Đang tải hàng đợi. Nếu chưa kết nối được hệ thống quán, hãy kiểm tra máy chủ rồi tải lại.'}</div>}
-    <div className="kitchen-summary" aria-label="Tổng số suất"><span><strong>{count('QUEUED')}</strong> Chờ làm</span><span><strong>{count('PREPARING')}</strong> Đang làm</span><span><strong>{count('READY')}</strong> Đã xong · chờ mang</span></div>
+    <div className="kitchen-summary" aria-label="Tổng số suất"><span><strong>{count('QUEUED')}</strong> Chờ làm</span><span><strong>{count('PREPARING')}</strong> Đang làm</span><span><strong>{count('READY')}</strong> Đã xong · chờ mang</span><span><strong>{count('PICKED_UP')}</strong> Đang mang</span><span><strong>{count('SERVED')}</strong> Đã phục vụ</span></div>
     <nav className="kitchen-views" aria-label="Lọc đợt gọi">
       <button aria-pressed={view === 'active'} onClick={() => setView('active')}>Đang xử lý ({activeBatches.length} đợt)</button>
       <button aria-pressed={view === 'ready'} onClick={() => setView('ready')}>Đã xong · chờ mang ({readyBatches.length} đợt)</button>
     </nav>
-    {snapshot && visibleBatches.length === 0 && <p className="empty-state">{view === 'ready' ? 'Chưa có đợt nào đã xong toàn bộ.' : batches.size === 0 ? 'Chưa có món đã gửi. Món mới sẽ tự xuất hiện tại đây.' : 'Đã làm xong mọi đợt hiện có. Mở mục Đã xong · chờ mang để xem lại.'}</p>}
+    {snapshot && visibleBatches.length === 0 && <p className="empty-state">{view === 'ready' ? 'Chưa có đợt đã xong còn chờ mang hoặc đang mang.' : batches.size === 0 ? 'Chưa có món đã gửi. Món mới sẽ tự xuất hiện tại đây.' : 'Đã làm xong mọi đợt hiện có. Mở mục Đã xong · chờ mang để xem lại.'}</p>}
     <div className="kitchen-batches">{visibleBatches.map(([batchId, items]) => {
       const first = [...items.values()][0][0]
       const elapsed = Math.max(0, Math.floor((now - Date.parse(first.createdAt)) / 60000))
-      const unfinished = [...items.values()].flat().some(u => u.status !== 'READY')
+      const unfinished = [...items.values()].flat().some(u => ['QUEUED', 'PREPARING'].includes(u.status))
       return <article className={`kitchen-batch ${unfinished && elapsed >= 15 ? 'waiting-long' : ''}`} key={batchId} aria-label={`${first.tableCode} đợt ${first.batchNumber}`}>
         <header><h2>{first.tableCode} <span>Đợt {first.batchNumber}</span></h2><p>{unfinished ? 'Chờ từ lúc gửi' : 'Gửi'} · {elapsed < 1 ? 'Dưới 1 phút' : `${elapsed} phút`}{unfinished && elapsed >= 15 && ' · Chờ lâu'}</p><small>Phiên #{first.sessionId} · Mã đợt #{batchId} · {new Date(first.createdAt).toLocaleTimeString('vi-VN')}</small></header>
         {[...items].map(([itemId, units]) => <section className="kitchen-item" key={itemId} aria-label={units[0].name}>
           <h3>{units[0].quantity} × {units[0].name}</h3>
-          <p className="kitchen-progress">{units.filter(u => u.status === 'READY').length}/{units[0].quantity} đã xong · {units.filter(u => u.status === 'QUEUED').length} chờ làm · {units.filter(u => u.status === 'PREPARING').length} đang làm</p>
+          <p className="kitchen-progress">{units.filter(u => !['QUEUED', 'PREPARING'].includes(u.status)).length}/{units[0].quantity} đã xong · {units.filter(u => u.status === 'QUEUED').length} chờ làm · {units.filter(u => u.status === 'PREPARING').length} đang làm</p>
           {units[0].note && <p className="kitchen-note"><strong>Ghi chú:</strong> {units[0].note}</p>}
-          <div className="kitchen-units">{units.map(unit => <div className={`kitchen-unit unit-${unit.status.toLowerCase()}`} key={unit.id}><span>Suất {unit.number} · {labels[unit.status]}</span>{unit.status !== 'READY' ? <button disabled={stale || busy} onClick={() => void transition(unit)} aria-label={`${unit.status === 'QUEUED' ? 'Bắt đầu' : 'Hoàn thành'} suất ${unit.number} ${unit.name}`}>{unit.status === 'QUEUED' ? 'Bắt đầu làm' : 'Xác nhận xong'}</button> : <strong>✓ Chờ mang</strong>}</div>)}</div>
+          <div className="kitchen-units">{units.map(unit => <div className={`kitchen-unit unit-${unit.status.toLowerCase()}`} key={unit.id}><span>Suất {unit.number} · {labels[unit.status]}</span>{['QUEUED', 'PREPARING'].includes(unit.status) ? <button disabled={stale || busy} onClick={() => void transition(unit)} aria-label={`${unit.status === 'QUEUED' ? 'Bắt đầu' : 'Hoàn thành'} suất ${unit.number} ${unit.name}`}>{unit.status === 'QUEUED' ? 'Bắt đầu làm' : 'Xác nhận xong'}</button> : <strong>{unit.status === 'READY' ? '✓ Chờ mang' : labels[unit.status]}</strong>}</div>)}</div>
         </section>)}
       </article>
     })}</div>

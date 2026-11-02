@@ -10,7 +10,7 @@
 | D006 | Đã xác nhận | React + TypeScript + Vite | Chủ dự án yêu cầu đủ ba công nghệ khi thực hiện M1 ngày 29/10/2026. |
 | D007 | Đề xuất | Server và PostgreSQL tại quán | Mất WAN vẫn dùng được nếu LAN/server còn hoạt động. |
 | D008 | Đã xác nhận trong yêu cầu 6.3 — 31/10/2026 | Tách bàn vật lý khỏi phiên từng lượt khách | Theo yêu cầu chủ dự án bước 6.3; gắn tablet/credential khách để 6.4, chưa chốt chi tiết cơ chế ghép. |
-| D009 | Đề xuất | Nhân viên thấy món xong trực tiếp | Giảm việc quản lý phải chuyển tiếp mọi thông báo. |
+| D009 | Đã xác nhận trong yêu cầu 6.6 — 02/11/2026 | Nhân viên thấy món xong trực tiếp, quản lý giám sát | Theo yêu cầu chủ dự án; không cần quản lý chuyển tiếp mọi thông báo. |
 | D010 | Đề xuất | Một bill thanh toán toàn bộ một lần | Giới hạn độ phức tạp demo; cần xác nhận lại trước dùng thật. |
 | D011 | Đề xuất | Không đồng bộ ghi độc lập trên mọi tablet ở MVP | Dùng máy chủ local giải quyết mất Internet; sự cố LAN/server có quy trình thủ công. |
 | D012 | Chưa quyết định | Thuế/phí, chứng từ, điều chỉnh và hoàn tiền | Cần nghiệp vụ thật từ chủ quán. |
@@ -46,3 +46,17 @@ Theo yêu cầu chủ dự án, Codex triển khai FulfillmentUnit theo suất v
 ## D024 — Ẩn đợt đã xong khỏi hàng đợi chính, 02/11/2026
 
 Chủ dự án yêu cầu: B02 đợt 1 hoàn thành thì rời màn hình làm món, có mục mở lại đã xong. Thay lựa chọn giữ mọi đợt trong cùng danh sách ở D023: mặc định Đang xử lý chỉ hiện đợt còn suất QUEUED/PREPARING; mọi suất của mọi dòng READY mới vào Đã xong · chờ mang. Phân loại theo batch ID từ snapshot server, không theo toàn bàn hoặc một dòng món; không xóa dữ liệu, không thêm mutation/migration hoặc triển khai nhận mang 6.6. Reload/reconnect phân loại lại, mặc định Đang xử lý. Chi tiết hiện hành ở DOMAIN/UX, bằng chứng ở STATUS.
+
+## D025 — Nhận mang và phục vụ từng suất 6.6, 02/11/2026
+
+Theo yêu cầu chủ dự án, Codex tiếp nối FulfillmentUnit với READY → PICKED_UP → SERVED, nhân viên nhận trực tiếp và quản lý giám sát. Chọn mặc định demo: STAFF nhận và tự giao/trả suất mình nhận; MANAGER được xem và trả lại bất kỳ suất PICKED_UP khi có lý do, không nhận/giao thay. Đây là lựa chọn triển khai trong phạm vi “quyền phù hợp”, chưa phải chính sách nhân sự quán thật được chốt riêng. Chưa thêm quyền hủy/thu tiền/quản trị.
+
+V7 thêm version và lịch sử serving_operation: UUID chống lặp cùng expected version bảo vệ cả timeout/reload và yêu cầu cũ sau nhận → trả → nhận lại. Trạng thái và lịch sử commit cùng nhau dưới khóa phiên chung với ordering/kitchen; actor/time lấy backend. Dùng lại SSE invalidation, polling và snapshot PostgreSQL, không thêm dependency. Bổ sung hai tài khoản demo bằng seed mới, bảo toàn tài khoản/đơn cũ. Mở rộng D024: READY/PICKED_UP/SERVED đều bếp đã làm xong; đợt SERVED hết không còn mục chờ mang. Khách chỉ đọc progress trong phiên mình. DOMAIN giữ luật chi tiết, ARCHITECTURE giữ hợp đồng; 6.7 chưa triển khai.
+
+## D026 — Đang mang tập trung vào món của chính nhân viên, 02/11/2026
+
+Chủ dự án phản hồi ảnh màn hình nhân viên thấy cả món người khác đang mang, dễ rối khi nhiều món. Điều chỉnh UI: STAFF chỉ thấy PICKED_UP do chính mình nhận trong Đang mang, số đếm khớp danh sách; MANAGER vẫn xem mọi nhân viên để giám sát/trả lại. Chờ mang dùng chung, Đã phục vụ giữ phạm vi hiện có. Lọc khi dựng màn hình từ snapshot hiện tại; không biến bộ lọc UX thành thay đổi quyền API, không thay transaction/migration hoặc tiền.
+
+## D027 — Giới hạn dữ liệu tại API, lịch sử chỉ cho quản lý, 02/11/2026
+
+Chủ dự án tiếp tục thấy món của nhanvien2 ở cửa sổ nhanvien và yêu cầu lịch sử/Đã phục vụ chỉ cho quản lý. Ảnh cửa sổ đầu không có lời nhắc phạm vi mới, phù hợp với tab còn chạy bundle cũ; server hiện trả index bundle mới và Cache-Control no-store. D026 chỉ lọc phía UI nên chưa bảo đảm phạm vi với client cũ. Thay bằng lọc snapshot tại backend từ principal/ID/role hiện tại: STAFF nhận READY chung + PICKED_UP của mình; MANAGER nhận mọi trạng thái phục vụ. API lịch sử chỉ MANAGER enabled, kể cả session đang giữ role cũ; nhân viên không có tab Đã phục vụ hoặc nút lịch sử. Giữ tra biên nhận của chính người thao tác để phục hồi lost response; không đổi transaction ghi/schema/giá hoặc tiến độ khách/bếp. Cần tải lại trang ở từng cửa sổ sau cập nhật để lấy bố cục mới; không xóa dữ liệu trình duyệt đang có lượt chờ.

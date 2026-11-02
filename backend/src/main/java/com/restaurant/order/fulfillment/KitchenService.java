@@ -63,8 +63,8 @@ public class KitchenService {
         String expected = target.equals("PREPARING") ? "QUEUED" : "PREPARING";
         if (!expected.equals(current)) throw new TableOperationException(HttpStatus.CONFLICT, "UNIT_STATE_CONFLICT", "Suất món đã đổi trạng thái. Hãy kiểm tra dữ liệu mới trước khi thao tác.");
         int changed = target.equals("PREPARING")
-                ? jdbc.update("UPDATE fulfillment_unit SET status = 'PREPARING', started_at = clock_timestamp(), started_by = ? WHERE id = ? AND status = 'QUEUED'", actor, id)
-                : jdbc.update("UPDATE fulfillment_unit SET status = 'READY', ready_at = clock_timestamp(), ready_by = ? WHERE id = ? AND status = 'PREPARING'", actor, id);
+                ? jdbc.update("UPDATE fulfillment_unit SET status = 'PREPARING', version = version + 1, started_at = clock_timestamp(), started_by = ? WHERE id = ? AND status = 'QUEUED'", actor, id)
+                : jdbc.update("UPDATE fulfillment_unit SET status = 'READY', version = version + 1, ready_at = clock_timestamp(), ready_by = ? WHERE id = ? AND status = 'PREPARING'", actor, id);
         if (changed != 1) throw new TableOperationException(HttpStatus.CONFLICT, "UNIT_STATE_CONFLICT", "Suất món vừa được thay đổi. Hãy tải lại.");
         events.publishEvent(new KitchenChanged());
     }

@@ -28,7 +28,9 @@ import org.springframework.test.context.ActiveProfiles;
 @Import(TestcontainersConfiguration.class)
 @SpringBootTest(webEnvironment = SpringBootTest.WebEnvironment.RANDOM_PORT, properties = {
         "DEMO_STAFF_PASSWORD=" + BrowserSession.STAFF_PASSWORD,
-        "DEMO_KITCHEN_PASSWORD=" + BrowserSession.KITCHEN_PASSWORD })
+        "DEMO_KITCHEN_PASSWORD=" + BrowserSession.KITCHEN_PASSWORD,
+        "DEMO_STAFF2_PASSWORD=" + BrowserSession.STAFF_PASSWORD,
+        "DEMO_MANAGER_PASSWORD=" + BrowserSession.STAFF_PASSWORD })
 @ActiveProfiles("demo")
 class TableSessionIntegrationTests {
     @LocalServerPort int port;

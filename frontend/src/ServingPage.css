@@ -1,0 +1,15 @@
+.serving-units { display: grid; gap: 12px; margin-top: 16px; }
+.serving-unit { padding: 16px; border: 1px solid #d9dfd8; border-radius: 12px; background: #f7faf6; overflow-wrap: anywhere; }
+.serving-unit p { margin: 8px 0; color: #4e6057; line-height: 1.6; }
+.serving-actions { display: flex; flex-wrap: wrap; gap: 8px; margin-top: 12px; }
+.serving-page button { min-height: 48px; white-space: normal; }
+.serving-actions button, .serving-return button, .serving-recovery button, .serving-history button { padding: 10px 16px; border: 1px solid #afc4b7; border-radius: 10px; background: white; color: #254d3a; cursor: pointer; }
+.serving-actions button:first-child { background: #e6f0e8; }
+.serving-return, .serving-history, .serving-recovery { margin: 24px 0; padding: 24px; border-radius: 16px; border: 1px solid #c7d4ca; background: #fff; overflow-wrap: anywhere; }
+.serving-recovery { background: #fff4de; border-color: #d8bc83; }
+.serving-return textarea { display: block; width: 100%; min-height: 96px; margin: 12px 0; padding: 12px; box-sizing: border-box; font: inherit; }
+.serving-return button { margin: 8px 8px 0 0; }
+.serving-history li { padding: 8px 0; line-height: 1.7; }
+.serving-page button:disabled { opacity: .5; cursor: not-allowed; }
+.unit-picked_up { background: #fff6e6; }
+.unit-served { background: #eaf3ed; }

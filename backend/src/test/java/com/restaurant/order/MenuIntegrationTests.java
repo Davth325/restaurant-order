@@ -19,7 +19,9 @@ import org.springframework.web.client.RestClient;
 @Import(TestcontainersConfiguration.class)
 @SpringBootTest(webEnvironment = SpringBootTest.WebEnvironment.RANDOM_PORT, properties = {
         "DEMO_STAFF_PASSWORD=" + BrowserSession.STAFF_PASSWORD,
-        "DEMO_KITCHEN_PASSWORD=" + BrowserSession.KITCHEN_PASSWORD })
+        "DEMO_KITCHEN_PASSWORD=" + BrowserSession.KITCHEN_PASSWORD,
+        "DEMO_STAFF2_PASSWORD=" + BrowserSession.STAFF_PASSWORD,
+        "DEMO_MANAGER_PASSWORD=" + BrowserSession.STAFF_PASSWORD })
 @ActiveProfiles("demo")
 class MenuIntegrationTests {
     @LocalServerPort

@@ -1,6 +1,6 @@
 # Kiểm thử và điều kiện nghiệm thu
 
-Hiện có integration test PostgreSQL/Testcontainers và E2E Chromium tới bước 6.5: schema/seed/menu/bàn, đăng nhập 6.2, mở phiên 6.3, tablet và gửi món 6.4, bếp/từng suất/SSE 6.5. Kết quả thực tế ở STATUS, cách chạy ở README. Các mục ghi “giai đoạn sau” cùng kịch bản bếp/tiền/mạng chưa triển khai vẫn là yêu cầu, không được coi là đã kiểm tra.
+Hiện có integration test PostgreSQL/Testcontainers và E2E Chromium tới bước 6.6: schema/seed/menu/bàn, đăng nhập 6.2, mở phiên 6.3, tablet và gửi món 6.4, bếp/từng suất/SSE 6.5, nhận mang/phục vụ/lịch sử/quản lý 6.6. Kết quả thực tế ở STATUS, cách chạy ở README. Các mục ghi “giai đoạn sau” cùng kịch bản tiền/mạng chưa triển khai vẫn là yêu cầu, không được coi là đã kiểm tra.
 
 ## Kiểm tra bộ khung M1
 
@@ -113,3 +113,15 @@ Hiện có integration test PostgreSQL/Testcontainers và E2E Chromium tới bư
 - Kiểm tra bằng tay trên thiết bị thật: cảm ứng, bố cục, Safari, ngủ/thức, mất mạng, âm thanh.
 
 Không tạo test chỉ để có số lượng. Mỗi lỗi sai tiền, sai bàn, trùng đơn hoặc sai quyền nên có cách tái hiện và kiểm tra hồi quy phù hợp.
+
+## Nhận mang và phục vụ — 6.6
+
+- ServingIntegrationTests dùng HTTP/cookie/CSRF thật với PostgreSQL/Testcontainers. Hai username STAFF và hai session cùng chờ khóa phiên, xác nhận pg_stat_activity có hai transaction chờ trước khi thả; đúng một 204, một 409 và một người nhận/sự kiện. Không lấy hai lời gọi tuần tự làm bằng chứng tranh chấp.
+- Gọi 3 suất, nhận/giao 1: đúng SERVED/READY/READY, actor/giờ database, bàn khác không đổi và tổng tiền giữ nguyên. Retry cùng UUID không đổi giờ/người hoặc ghi thêm lịch sử; đọc qua login mới vẫn đúng. SERVED không nhận/trả lại được.
+- Chủ suất và quản lý trả lại có lý do, STAFF khác không được giao/trả; MANAGER không nhận/giao thay. Kiểm version chống yêu cầu cũ sau trả lại, replay biên nhận cũ không nhận lại, cùng khóa khác payload bị chặn; tra biên nhận chỉ chủ thao tác. Anonymous/guest/KITCHEN/disabled/thiếu CSRF, phiên đóng và input sai bị từ chối.
+- Ép lỗi INSERT serving_operation: rollback cả thay đổi suất, giữ version và retry cùng request thành công sau phục hồi. SSE serving gửi changed sau commit và đóng stream logout, không lỗi response đã commit. Migration schema riêng V6 → V7 giữ nguyên order/item/giá/ghi chú và cả ba trạng thái bếp cũ, không tự nhận/giao món.
+- serving.spec.ts mô phỏng snapshot để kiểm bố cục dọc/ngang/phone, thời gian chờ, nút ≥44px, xung đột/owner, snapshot cũ khóa/recover, hết phiên gỡ dữ liệu; pending qua reload và tra trước retry nguyên khóa/ID/version; quản lý trả lại cần lý do; bếp không còn nút thao tác trên PICKED_UP/SERVED. Các mock chỉ chứng minh UI.
+- Verify-Serving.ps1 chạy jar và UI thật trên DB riêng verify_serving_<guid>/8081: hai browser nhân viên bấm cùng suất (204/409), partial service, manager return/history, mất response đã commit/reload không POST lại, SSE và fallback polling, offline/khóa/reconnect, guest/bếp, restart đối chiếu toàn snapshot actor/time/state. Đúng 2 đợt/180.000đ/4 suất, 2 SERVED + 1 READY + 1 QUEUED và 6 lịch sử. Dọn DB tạm; không nhận/giao đơn của người dùng trên demo.
+- Hồi quy toàn bộ backend và Playwright cũ, Verify-Kitchen/Verify-GuestOrdering chạy tuần tự. Số test/kết quả thực chạy và giới hạn ghi ở STATUS; không coi CI cũ hoặc mock là bằng chứng live cho 6.6.
+- Hồi quy D026: snapshot có suất của hai STAFF khác nhau, mỗi người chỉ thấy suất/số đếm Đang mang của mình; quản lý thấy tổng mọi người, reload vẫn đúng. Xung đột nhận bởi người khác khiến Đang mang của mình bằng 0, không hiện thẻ người khác. Live runner kiểm người thua nhận không thấy suất của người thắng, quản lý vẫn thấy để giám sát.
+- D027 bổ sung kiểm tra HTTP/PostgreSQL: hai suất đang mang của hai người và một SERVED; API mỗi STAFF chỉ trả suất của mình, kể cả query giả scope=all/role=MANAGER; MANAGER thấy đủ. STAFF không đọc lịch sử, manager disabled hoặc đổi role giữa session cũng bị chặn. Biên nhận cá nhân của suất đã giao vẫn tra/retry được. Mock UI cố ý trả snapshot có cả SERVED và người khác để kiểm lọc phòng vệ: STAFF không có tab Đã phục vụ/nút lịch sử; manager có cả hai sau reload. Live đối chiếu snapshot riêng STAFF/MANAGER qua restart và 403 lịch sử của STAFF.

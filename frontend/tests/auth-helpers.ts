@@ -3,7 +3,7 @@ import { readFileSync } from 'node:fs'
 import { resolve } from 'node:path'
 
 // CI and local demo use independently generated credentials. Never print/store them in reports.
-export function demoPassword(role: 'STAFF' | 'KITCHEN') {
+export function demoPassword(role: 'STAFF' | 'KITCHEN' | 'STAFF2' | 'MANAGER') {
   const key = `DEMO_${role}_PASSWORD`
   const value = process.env[key] ?? readFileSync(resolve(import.meta.dirname, '../../.env'), 'utf8')
     .split(/\r?\n/).find(line => line.startsWith(`${key}=`))?.slice(key.length + 1)
@@ -11,11 +11,11 @@ export function demoPassword(role: 'STAFF' | 'KITCHEN') {
   return value
 }
 
-export async function loginApi(request: APIRequestContext, role: 'STAFF' | 'KITCHEN' = 'STAFF') {
+export async function loginApi(request: APIRequestContext, role: 'STAFF' | 'KITCHEN' | 'STAFF2' | 'MANAGER' = 'STAFF') {
   const csrf = await (await request.get('/api/auth/csrf')).json()
   const response = await request.post('/api/auth/login', {
     headers: { [csrf.headerName]: csrf.token },
-    form: { username: role === 'STAFF' ? 'nhanvien' : 'bep', password: demoPassword(role) },
+    form: { username: { STAFF: 'nhanvien', KITCHEN: 'bep', STAFF2: 'nhanvien2', MANAGER: 'quanly' }[role], password: demoPassword(role) },
   })
   expect(response.status()).toBe(204)
 }

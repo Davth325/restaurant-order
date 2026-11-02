@@ -25,7 +25,7 @@ public class GuestOrderService {
     public record Binding(String token, GuestSession session) {}
     public record Line(Long menuItemId, Integer quantity, Long expectedPriceVnd, List<Long> optionIds, String note) {}
     public record Submit(UUID requestKey, List<Line> items) {}
-    public record Progress(int queued, int preparing, int ready) {}
+    public record Progress(int queued, int preparing, int ready, int pickedUp, int served) {}
     public record Item(long id, long menuItemId, String name, long unitPriceVnd, int quantity, String note, String status, Progress progress) {}
     public record Batch(long id, UUID requestKey, Instant createdAt, long totalVnd, List<Item> items) {}
     private static final long MAX_MONEY = 9007199254740991L;
@@ -128,14 +128,17 @@ public class GuestOrderService {
         var items = jdbc.query("""
                 SELECT i.*, count(*) FILTER (WHERE u.status = 'QUEUED') AS queued,
                     count(*) FILTER (WHERE u.status = 'PREPARING') AS preparing,
-                    count(*) FILTER (WHERE u.status = 'READY') AS ready
+                    count(*) FILTER (WHERE u.status = 'READY') AS ready,
+                    count(*) FILTER (WHERE u.status = 'PICKED_UP') AS picked_up,
+                    count(*) FILTER (WHERE u.status = 'SERVED') AS served
                 FROM order_item i JOIN fulfillment_unit u ON u.order_item_id = i.id
                 WHERE i.batch_id = ? GROUP BY i.id ORDER BY i.id
                 """, (rs, row) -> new Item(
                 rs.getLong("id"), rs.getLong("menu_item_id"), rs.getString("item_name"), rs.getLong("unit_price_vnd"),
-                rs.getInt("quantity"), rs.getString("note"), rs.getInt("ready") == rs.getInt("quantity") ? "READY"
+                rs.getInt("quantity"), rs.getString("note"), rs.getInt("served") == rs.getInt("quantity") ? "SERVED"
+                    : rs.getInt("served") > 0 ? "PARTIALLY_SERVED" : rs.getInt("picked_up") > 0 ? "PICKED_UP" : rs.getInt("ready") == rs.getInt("quantity") ? "READY"
                     : rs.getInt("ready") > 0 ? "PARTIALLY_READY" : rs.getInt("preparing") > 0 ? "PREPARING" : "QUEUED",
-                new Progress(rs.getInt("queued"), rs.getInt("preparing"), rs.getInt("ready"))), id);
+                new Progress(rs.getInt("queued"), rs.getInt("preparing"), rs.getInt("ready"), rs.getInt("picked_up"), rs.getInt("served"))), id);
         return jdbc.queryForObject("SELECT * FROM order_batch WHERE id = ?", (rs, row) -> new Batch(id,
                 rs.getObject("request_key", UUID.class), rs.getTimestamp("created_at").toInstant(), rs.getLong("total_vnd"), items), id);
     }

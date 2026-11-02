@@ -1,6 +1,91 @@
 # Trạng thái hiện tại
 
-Cập nhật mới nhất: **02/11/2026 — 6.5 đã được người dùng nghiệm thu, commit/push và CI Linux thành công cho commit chức năng 80c3c04.** Bao gồm từng suất, realtime và tự ẩn đợt xong với mục mở xem lại. Bước tiếp: **6.6 — nhân viên mang món**. Các mục chờ thử/chờ chốt bên dưới là lịch sử.
+Cập nhật mới nhất: **02/11/2026 — người dùng giao chốt 6.6 với điều kiện nhân viên không có mục Đã phục vụ.** Đã xác minh UI/API thật của nhanvien/nhanvien2 đều chỉ có Chờ mang/Đang mang; quản lý xem Đã phục vụ và lịch sử. Đang chốt commit/push và kiểm tra CI, chỉ ghi kết quả khi thực sự hoàn tất. Bước tiếp: **6.7 — gọi thêm và ngoại lệ**.
+
+## Chốt nghiệm thu 6.6 — 02/11/2026
+
+- Người dùng yêu cầu **“Bỏ mục đã mang ở nhanvien đi là ok rồi chốt lại đi”**, kèm ảnh tab Đã phục vụ còn hiện ở cửa sổ nhanvien cũ. Theo ảnh và các phản hồi trước, yêu cầu là bỏ Đã phục vụ, giữ Đang mang để xác nhận giao. Bản source/jar hiện tại đã đáp ứng theo D027; không sửa thêm luồng nhận/giao đã thử.
+- Đã chạy lại node .work/verify-demo-serving-scope.cjs trên preview 8080 bằng ba BrowserContext thật: nhanvien/nhanvien2 không có nút Đã phục vụ/Lịch sử, API không trả SERVED và history 403; quanly còn xem Đã phục vụ. Thời điểm chốt demo có 11 suất đã phục vụ, do người dùng thao tác; script chỉ đọc và login/logout, không sửa đơn hoặc reset dữ liệu. Health UP. Cần Ctrl+F5 ở từng cửa sổ đã mở để thay JavaScript cũ; không xóa localStorage/cookie đang có pending.
+- Đối chiếu bằng chứng bản cuối: XML 42 backend test, 0 failures/errors; Playwright .last-run.json passed/failedTests rỗng với 48/48 ca; Verify-Serving trên DB riêng đã đạt cả restart, snapshot theo từng vai trò và 403 lịch sử. Không chạy lại toàn bộ test trong lượt chỉ chốt không đổi code. CI sẽ kiểm lại build sạch trên Linux; không dùng CI 6.5 để suy 6.6.
+- Review cuối code/migration/security/SSE/UI/test/verifier và diff về quyền, đúng suất/bàn, tiền giữ nguyên, lặp/đồng thời/rollback và phục hồi mất phản hồi. Giữ V1–V6/seed cũ, chỉ thêm V7/seed mới; chưa triển khai 6.7. git diff --check và scan-review.cjs đạt, 138 file source/bundle/log không thấy secret local đã biết/mẫu private key/GitHub token; .env/.work/build/dependency/report bị ignore.
+- git fetch origin thành công; local main/origin/main cùng baseline 40c50c0, 0 ahead/behind. Tiếp tục nhánh main theo quy trình hiện có, không force push. Kết quả commit/push/CI sẽ bổ sung bên trên sau khi có SHA/run thực tế.
+- Giữ preview/database đang chạy để tự thử tại http://127.0.0.1:8080/#serving; không dừng quán demo hoặc xóa dữ liệu. Hạn chế Safari/iPad/LAN/HTTPS/tải 30 bàn/backup vẫn như trước. Bước tiếp 6.7, chưa tự bắt đầu.
+
+Các mục chờ thử/chờ chốt bên dưới ghi lịch sử trước lời nhắn giao chốt này.
+
+## Phản hồi tiếp: lọc ở API, Đã phục vụ/lịch sử chỉ quản lý — 02/11/2026
+
+- Người dùng gửi ảnh nhanvien vẫn thấy hai suất của nhanvien2 và yêu cầu lịch sử Đã phục vụ chỉ quản lý xem. Ảnh nhanvien không có lời nhắc của bản UI mới trong khi nhanvien2 có; phù hợp với cửa sổ còn chạy mã UI cũ. Đã kiểm HTTP / trả 200, index trỏ bundle B5J9Ledv của bản D026 và Cache-Control no-store/must-revalidate/no-cache/max-age=0. Header không tự thay JavaScript đang chạy trong tab đã mở; không coi đây là bằng chứng trực tiếp đã thao tác trình duyệt của người dùng.
+- Thừa nhận D026 mới lọc UI nên chưa đủ với client cũ. **D027** bổ sung lọc ở ServingService bằng ID/role/enabled của principal: STAFF chỉ nhận READY chung + PICKED_UP do mình nhận; không nhận suất đang mang của người khác hoặc SERVED. MANAGER thấy đầy đủ. API history cần MANAGER ở Security và kiểm lại database trong service, chặn cả manager disabled/đổi role mà session còn quyền cũ. Không nhận scope/role do client tự khai.
+- UI nhân viên chỉ còn Chờ mang/Đang mang, không có Đã phục vụ hoặc nút Lịch sử; quản lý giữ đủ. Vẫn cho nhân viên tra biên nhận cá nhân và retry chính thao tác đã giao để phục hồi lost response dù suất đã rời workspace. Giữ quyền tiến độ khách/bếp, transaction nhận/giao/trả và mọi schema/tiền/dữ liệu demo; không thêm migration hoặc 6.7.
+- **Đã chạy:** npm.cmd --prefix frontend run typecheck / run lint / run build và backend/gradlew.bat -p backend --no-daemon build (sau Use-Java21): exit 0. XML **42/42 backend test, 0 failures/errors**, gồm 8 ServingIntegrationTests và 34 hồi quy. Ca mới tạo hai chủ suất đang mang + một SERVED, kiểm API từng STAFF qua login mới, query giả role/scope, snapshot manager, 403 history/disabled/đổi role và biên nhận của suất đã giao. Ca tranh chấp/SSE cũ giữ kiểm tiến độ qua manager, thêm kiểm người thua không được nhận suất thắng trong snapshot.
+- **UI:** E2E_BASE_URL=http://127.0.0.1:8080; npm.cmd --prefix frontend run test:e2e → **48/48 Chromium đạt**, 35,3 giây, .last-run.json passed. Mock cố ý có cả suất người khác và SERVED: STAFF không có tab/lịch sử, MANAGER có đủ sau reload; toàn bộ khách/bếp/bàn/menu/auth/sidebar hồi quy đạt.
+- **Live:** scripts/Verify-Serving.ps1 trên DB riêng → exit 0, hai nhân viên/manager, 204–409, lọc cả raw API người thua, giao từng phần, trả hàng/lịch sử, lost response/reload, SSE/polling/offline và restart. Snapshot STAFF không có SERVED; snapshot MANAGER giữ đúng actor/time/state và lịch sử, STAFF history 403. DB tạm đúng 2 đợt/180.000đ/4 suất/2 SERVED/6 thao tác và đã dọn.
+- Hai lượt live đầu bắt được lỗi thời điểm của runner: panel pending xuất hiện trước khi POST thực sự lưu, script đã reload ngay rồi kỳ vọng tra thấy biên nhận; UI đúng khi báo Chưa thấy thao tác được lưu. Bổ sung chờ route.fetch nhận HTTP 204 (chứng minh commit) trước giả lập reload; giữ nguyên assertion hết pending/không POST lặp và toàn bộ restart. Không bỏ kiểm tra hoặc giảm kỳ vọng nghiệp vụ. Lỗi kiểu servedAt của fixture được sửa khai báo nullable, typecheck sau đó đạt.
+- **Đối chiếu demo chỉ đọc:** node .work/verify-demo-serving-scope.cjs đăng nhập ba BrowserContext, đọc API/UI và đăng xuất; không nhận/giao/sửa món. Thời điểm kiểm: cả hai nhân viên 0 đang mang/0 SERVED trong workspace; quản lý thấy 9 SERVED do người dùng đã thử. STAFF history 403, UI không có Đã phục vụ/Lịch sử. Đã xem ảnh .work/serving-scope-nhanvien.png và serving-scope-quanly.png. Không còn DB verify_serving_%, preview health UP.
+- Cập nhật DOMAIN/UX/ARCHITECTURE/D027/PRODUCT/TESTING/OPERATIONS/README. Đã review predicate SQL tham số hóa, route history trước matcher chung, quyền hiện tại, retry biên nhận và UI lọc phòng vệ. git diff --check và scan-review.cjs đạt (138 file + bundle/log, không thấy secret local đã biết/mẫu private key/GitHub token). Hai verifier khách/bếp riêng không chạy lại trong lượt này; có hồi quy backend/UI và trạng thái khách/bếp trong live serving. Safari/iPad/LAN/HTTPS chưa kiểm chứng.
+- **Sẵn sàng thử:** ở từng cửa sổ nhanvien/nhanvien2/quanly nhấn Ctrl+F5 tại http://127.0.0.1:8080/#serving, đăng nhập lại nếu cần. STAFF chỉ hai mục, nhận đúng suất mình mang; quanly có Đã phục vụ/lịch sử. Không xóa dữ liệu trình duyệt khi còn pending. Chưa commit/push/CI, tiếp tục chờ người dùng thử và giao chốt; 6.7 chưa triển khai.
+
+Các mục D026/6.6 phía dưới là lịch sử trước thay đổi quyền đọc D027.
+
+## Chỉnh theo phản hồi: Đang mang chỉ hiện món của mình — 02/11/2026
+
+- Chủ dự án gửi ảnh nhanvien2 thấy cả suất do nhanvien nhận, đề nghị chỉ hiện món mình mang để tránh rối. Đã lọc PICKED_UP theo username hiện tại cho STAFF, áp dụng trước tính số đếm và gom thẻ. Có lời nhắc phạm vi và trạng thái rỗng riêng. MANAGER vẫn thấy toàn bộ để giám sát/trả lại; Chờ mang chung và Đã phục vụ giữ cách xem hiện có.
+- Tiếp nối toàn bộ 6.6 chưa commit trên main/HEAD 40c50c0. Chỉ đổi UI/bộ kiểm thử và tài liệu, không đổi backend/quyền ghi/schema/giá/tổng/số lượng hoặc dữ liệu demo. Cập nhật DOMAIN/UX/ARCHITECTURE, D026, README và TESTING. Quyền đọc API nội bộ vẫn như trước; đây là lọc hiển thị, không phải cơ chế bảo mật mới.
+- Đã chạy npm.cmd --prefix frontend run typecheck / run lint / run build và Gradle --no-daemon bootJar: exit 0. Stop/Start-Preview thành công, ứng dụng bản mới ở http://127.0.0.1:8080/#serving. Restart yêu cầu đăng nhập lại; giữ database/đơn/thao tác người dùng đã thử.
+- E2E_BASE_URL=http://127.0.0.1:8080; npm.cmd --prefix frontend run test:e2e: **48/48 Chromium đạt**, 50,2 giây, .last-run.json passed. Ba ca bổ sung kiểm snapshot trộn món hai nhân viên: từng STAFF chỉ thấy đúng suất/số đếm của mình, MANAGER thấy tất cả, reload vẫn đúng. Ca xung đột kiểm suất người khác nhận không xuất hiện trong Đang mang của mình.
+- scripts/Verify-Serving.ps1: exit 0 trên DB tạm riêng; người thua nhận thấy Đang mang 0 và không còn thẻ, quản lý vẫn thấy suất người thắng. Toàn bộ tranh chấp/giao từng phần/trả hàng/lịch sử/SSE/polling/mất response/reload/restart vẫn đạt; 2 đợt/180.000đ/4 suất/2 SERVED/6 thao tác, đã dọn DB tạm. Không nhận/giao món demo thay người dùng.
+- git diff --check và scan-review.cjs đạt: 138 file source + bundle/log không thấy secret local đã biết hoặc mẫu private key/GitHub token. Đã review điều kiện lọc/count/gom món, đổi vai trò/reload và mất kết nối. Không chạy lại 41 test backend hoặc hai verifier khách/bếp trong lượt chỉ đổi UI này; bằng chứng 6.6 trước đó ở bên dưới. Safari/iPad thật và LAN/HTTPS vẫn chưa kiểm chứng.
+- **Sẵn sàng thử lại:** F5/đăng nhập nhanvien2 → Mang món → Đang mang chỉ còn suất do nhanvien2 nhận; cửa sổ nhanvien chỉ có suất của nhanvien, quanly thấy tổng cả hai. Chưa commit/push/CI; chờ người dùng thử và giao chốt, chưa triển khai 6.7.
+
+Mục 6.6 bên dưới ghi bằng chứng trước phản hồi lọc theo nhân viên; phạm vi Đang mang hiện tại theo mục mới này.
+
+## Nhân viên nhận mang và xác nhận phục vụ — 6.6, 02/11/2026
+
+### Đã làm
+
+- Đọc AGENTS/README/STATUS cùng PRODUCT/DOMAIN/ARCHITECTURE/UX/DECISIONS/TESTING/OPERATIONS; đối chiếu code và Git. Bắt đầu trên main sạch, HEAD 40c50c0, chức năng 6.5 ở 80c3c04. Tài liệu ghi nghiệm thu và CI đúng commit 6.5; lần này không truy vấn lại GitHub hoặc lấy CI cũ làm bằng chứng 6.6. Tiếp tục nhánh hiện tại theo quy trình đang dùng, không stage/commit/push.
+- Khởi động Docker Desktop và PostgreSQL Compose, Initialize-Dev giữ secret/volume/tài khoản cũ và thêm mật khẩu ngẫu nhiên cho nhanvien2/quanly. Giữ Java 21/Spring Boot/Gradle/React/PostgreSQL và dependency hiện có, vẫn chỉ localhost.
+- Flyway V7 bổ sung PICKED_UP/SERVED, version, người/giờ nhận và giao, ràng buộc lifecycle; serving_operation lưu request UUID, actor, ID suất, phiên bản trước, chuyển trạng thái, lý do và giờ database. Không sửa V1–V6/seed cũ. Seed Java mới chỉ demo tạo nhanvien2 (STAFF) và quanly (MANAGER), BCrypt và không reset tài khoản đã có.
+- ServingService/Controller: snapshot/nhận/giao/trả/tra biên nhận/lịch sử. Khóa phiên cùng ordering/kitchen, UPDATE so trạng thái/version, ghi lịch sử cùng transaction, UUID chống lặp. Hai người nhận cùng suất chỉ một thành công; yêu cầu cũ không tự có hiệu lực sau nhận → trả. Actor/time lấy backend; không ghi/sửa tiền hoặc số lượng món đã gọi.
+- Mặc định demo do Codex chọn: chủ suất STAFF được giao/trả; MANAGER xem mọi suất và trả suất đang mang khi có lý do, không nhận/giao thay; STAFF khác/KITCHEN/khách không có quyền đó. Bắt buộc lý do trả, không đưa SERVED về hàng chờ. Luật hiện hành ở DOMAIN, lý do D025; chưa mở rộng ngoại lệ/hủy/thu tiền/quản trị.
+- UI /#serving có Chờ mang / Đang mang / Đã phục vụ, bàn/phiên/đợt/món/ghi chú/số suất, thời gian chờ từ bếp xong, người và giờ nhận/giao, lịch sử. Nhân viên/quản lý nhận invalidation sau commit qua SSE; polling/focus/reconnect dự phòng. Snapshot cũ khóa thao tác. POST chưa rõ kết quả giữ lượt qua reload, tra biên nhận và nội dung trước retry cùng UUID/version, không tự POST lại hoặc nhận suất khác khi còn pending.
+- Bếp tính READY/PICKED_UP/SERVED đều đã chế biến xong, hiển thị nhãn đang mang/đã phục vụ, không có nút bếp trên các suất đó; đợt SERVED hết rời mục chờ mang. Khách tải lại món đã gọi để xem tiến độ mới theo credential/phiên riêng, không thấy actor hoặc lịch sử nội bộ.
+- Cập nhật README/AGENTS/PRODUCT/DOMAIN/ARCHITECTURE/UX/DECISIONS/TESTING/OPERATIONS. Không còn phần code 6.6 đang dở chặn thử local; 6.7 chưa bắt đầu.
+
+### Bằng chứng thực chạy
+
+| Lệnh / kiểm tra | Kết quả |
+| --- | --- |
+| docker desktop start; scripts/Initialize-Dev.ps1; scripts/dev.ps1 db | Docker Linux Engine/PostgreSQL healthy; .env và volume cũ giữ nguyên, thêm secret mới ngoài Git |
+| scripts/dev.ps1 build | Exit 0: npm ci/lint/TypeScript/Vite, Gradle clean build. Bản này có 40 test backend; sau thêm ca migration V6 → V7 chạy Gradle build phía dưới |
+| Dot-source scripts/Use-Java21.ps1; backend/gradlew.bat -p backend --no-daemon build | Exit 0; **41/41 backend test, 0 failures/errors**, gồm 7 ServingIntegrationTests và 34 hồi quy; đối chiếu XML thực tế |
+| ServingIntegrationTests | HTTP/cookie/CSRF/PostgreSQL thật; hai username/session cùng chờ khóa ở pg_stat_activity rồi đúng 204/409, actor khớp người thắng; partial service/tiền không đổi, owner/manager/disabled/closed/quyền, reason/history, version chống yêu cầu cũ, retry/lookup, journal failure rollback, SSE/logout và migration giữ tiến độ bếp cũ |
+| npm.cmd --prefix frontend run typecheck / run lint / run build; Gradle --no-daemon bootJar | Exit 0; đóng gói UI cuối có kiểm tra đúng nội dung biên nhận khi phục hồi |
+| E2E_BASE_URL=http://127.0.0.1:8080; npm.cmd --prefix frontend run test:e2e (jar cuối) | **45/45 Chromium đạt**, 40,9 giây; .last-run.json passed/failedTests rỗng, gồm 5 serving và toàn bộ 40 hồi quy |
+| scripts/Verify-Serving.ps1 (jar cuối) | Exit 0; hai browser STAFF bấm cùng suất, 204/409; giao 2/3, quản lý trả lại có lý do/lịch sử, mất response sau commit/reload chỉ tra không POST lại, SSE/polling/offline/reconnect, trạng thái khách/bếp và restart đối chiếu nguyên snapshot actor/time/state. DB tạm đúng **2 đợt/180.000đ/4 suất: 2 SERVED + 1 READY + 1 QUEUED, 6 thao tác**; đã dọn |
+| scripts/Verify-GuestOrdering.ps1 | Exit 0; hai tablet/đúng phiên/giá/chống trùng/mất response/reload/restart; đúng 3 đợt/210.000đ, DB tạm đã dọn. Chạy sau thay đổi tiến độ khách; lần đóng gói cuối chỉ thêm kiểm tra receipt ở UI phục vụ, không đổi khách/backend |
+| scripts/Verify-Kitchen.ps1 (jar cuối) | Exit 0; hai bếp/SSE/từng suất/đợt xong tự ẩn/polling/reconnect/mất response/reload/restart; đúng 3 đợt/225.000đ/5 suất/3 READY; DB tạm đã dọn |
+| Layout và ảnh live | 768×1024, 1024×768, 375×812 không tràn ngang, nút ≥44px. Đã xem .work/serving-portrait.png; chữ bàn/món/ghi chú và trạng thái riêng rõ. Sidebar thấp/mobile có hồi quy cũ đạt |
+| Rà cuối | git diff --check và parse mọi script PowerShell đạt; scan-review.cjs quét **138 file source** + bundle/log, không thấy 5 secret local đã biết hoặc mẫu private key/GitHub token. .env/.work/cookie/build/test report bị ignore; đây là scan theo giá trị/mẫu, không phải audit toàn hệ thống |
+| Đọc demo sau mọi kiểm tra | **30 bàn/4 phiên/4 đợt/7 suất READY/0 serving_operation**, không dòng nào lệch số suất so với quantity. Không còn DB verify_guest_%/verify_kitchen_%/verify_serving_%; preview health UP |
+
+### Lỗi phát hiện và cách xử lý
+
+- Test mới ban đầu lỗi Java generic inference trong assertion HTTP status; đã tách biến int và chạy lại. Cập nhật số migration/tài khoản kỳ vọng do V7 + seed mới, không bỏ kiểm tra schema/seed cũ hoặc giảm kiểm tra nghiệp vụ.
+- Hồi quy UI bắt được thêm điều hướng gây tràn mobile anonymous và đẩy logout ra khỏi sidebar cao 420px. Mang món chỉ hiện cho STAFF/MANAGER, ẩn nhãn trang trí ở sidebar ≤500px; toàn bộ ca mobile/sidebar cũ vẫn đạt. Không yêu cầu giảm zoom.
+- Fixture mới ban đầu dựng readyAt lại ở mỗi lần snapshot ngay ranh giới phút, khiến số phút dao động 2/3; đã cố định timestamp fixture. Selector cảnh báo mới từng bắt nhầm hai alert đồng thời trong lúc refetch; chọn đúng alert bằng nội dung, giữ kiểm tra xung đột/khóa/phục hồi. Lượt toàn suite cuối đạt đủ 45 ca.
+- Một lượt Verify-Kitchen đã hoàn tất live nhưng restart lỗi đọc class trong jar vì Codex đóng gói trùng lúc verifier restart. Đã dừng đóng gói, chạy lại tuần tự với jar ổn định: toàn live + restart + đối chiếu database thành công; không bỏ bước restart. Các verifier cùng cổng 8081 luôn chạy tuần tự; khi tự kiểm tra không rebuild jar trong lúc verifier đang chạy.
+- Đã review migration/service/controller/security/SSE/UI/test/script và diff về quyền, đúng suất/bàn, tiền không đổi, lặp/đồng thời/rollback, dữ liệu cũ, lost response và reload. SQL ghi tham số hóa, state/version/actor/time kiểm ở server; không phát dữ liệu trước commit, không reset demo. Không thấy lỗi chặn thử local trong phạm vi 6.6.
+
+### Sẵn sàng tự thử / còn chờ
+
+- **Đang chạy:** http://127.0.0.1:8080/#serving, PostgreSQL healthy. Đăng nhập nhanvien (DEMO_STAFF_PASSWORD), nhanvien2 (DEMO_STAFF2_PASSWORD) hoặc quanly (DEMO_MANAGER_PASSWORD); mật khẩu ở .env local root. bep dùng DEMO_KITCHEN_PASSWORD. Có 7 suất demo đã xong sẵn để nhận mang; kiểm thử tự động không nhận/giao chúng.
+- Dùng hai browser/profile tách cookie cho hai nhân viên (hai tab thường không cách ly tài khoản). Cùng nhận đúng một suất → một người thành công; người nhận mở Đang mang → Đã giao đúng suất. Nhận nhầm suất chưa giao → chủ suất/quản lý Trả lại + lý do; mở Lịch sử. F5 kiểm người/giờ/số suất; Đã phục vụ không quay về Chờ mang. README mục 6.6 có hướng dẫn đầy đủ; khách tải lại món đã gọi để xem tiến độ.
+- **Chưa kiểm chứng:** Safari/iPad/thiết bị thật, LAN/WAN/HTTPS, ngủ/thức, tải đủ 30 bàn và backup/restore. Hiện Windows/Chromium/localhost; chưa cần tablet thật để nghiệm thu local. Thiết bị khác máy cần cấu hình LAN/HTTPS tin cậy theo OPERATIONS trước, không dùng 127.0.0.1 trên tablet khác.
+- **Chờ người dùng thử và giao chốt:** chưa commit/push/CI cho 6.6 theo yêu cầu. Không lấy CI 6.5 làm bằng chứng bản này. Sau nghiệm thu xử lý lời nhắn kết thúc; bước kế tiếp 6.7 — gọi thêm và ngoại lệ, chưa tự triển khai.
+
+Các mục 6.5 trở xuống là lịch sử; trạng thái hiện tại theo mục 6.6 phía trên.
 
 ## Kết quả commit/push/CI 6.5 — 02/11/2026
 

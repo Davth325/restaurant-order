@@ -2,6 +2,22 @@
 
 Các quy tắc dưới đây là thiết kế đề xuất cho bản đầu, trừ những yêu cầu được đánh dấu xác nhận trong PRODUCT.
 
+## Nhận mang và phục vụ đã triển khai — 6.6, 02/11/2026
+
+- Luồng từng suất: QUEUED → PREPARING → READY (bếp đã xong, chờ mang) → PICKED_UP (nhân viên đã nhận) → SERVED (đã giao tới khách). Không đổi trạng thái cả bàn/dòng khi chỉ giao một suất. Trạng thái suất là nguồn chính, tiền/đợt gọi giữ nguyên.
+- STAFF còn enabled được nhận suất READY. Lưu người nhận và giờ database; chỉ nhân viên đó được xác nhận giao hoặc trả lại. Hai người nhận cùng suất/phiên bản chỉ một người thành công; người còn lại nhận xung đột và đọc lại. Không nhận thay qua actor/time do client gửi.
+- Mặc định quyền do Codex chọn cho demo 6.6: MANAGER giám sát mọi suất và lịch sử, được trả lại suất PICKED_UP của bất kỳ nhân viên nào; không nhận mang hoặc xác nhận giao thay. Quyền này chưa bao gồm quản trị menu/tài khoản, mở bàn, hủy hoặc thu tiền. STAFF khác không trả/giao suất của người đang nhận. Bếp và khách không có quyền phục vụ.
+- Trả lại chỉ từ PICKED_UP → READY và bắt buộc lý do 1–300 ký tự sau bỏ khoảng trắng đầu/cuối. Xóa người/thời điểm nhận hiện tại, giữ thời điểm bếp xong để tiếp tục tính thời gian chờ; lịch sử vẫn giữ ai đã nhận/trả, lúc nào và lý do. Không trả SERVED về hàng đợi, không sửa xác nhận đã giao trong bước này; ngoại lệ thuộc 6.7.
+- Mỗi thao tác chốt đúng một ID suất và phiên bản. Phiên bản tăng khi bếp hoặc nhân viên đổi suất, chống yêu cầu cũ có hiệu lực lại sau chu kỳ nhận → trả. Khóa UUID chống lặp gắn với actor/suất/phiên bản/hành động/lý do: retry giống hệt trả biên nhận cũ, không nhận lại; cùng khóa khác nội dung báo xung đột. Ghi trạng thái và lịch sử trong cùng transaction, lỗi ghi lịch sử rollback cả thao tác.
+- Khóa phiên dùng chung với gửi món/bếp; OPEN và CHECKOUT_PENDING còn phục vụ, CLOSED chặn mutation và không có trong hàng đợi. Lịch sử nội bộ vẫn đọc được để đối chiếu. Chưa có đóng phiên qua UI.
+- Hàng đợi nhân viên hiển thị từng dòng theo bàn/phiên/đợt, số suất đang ở từng trạng thái, tên/ghi chú và thời gian chờ từng suất từ lúc bếp xong. Ba mục Chờ mang / Đang mang / Đã phục vụ tách biệt; người nhận và giờ nhận hiện ở Đang mang/Đã phục vụ. Món đã giao không trở lại Chờ mang sau reload/restart. Nhân viên nhận thông tin trực tiếp; quản lý không phải chuyển tiếp thông báo.
+- Theo phản hồi bổ sung chủ dự án ngày 02/11: STAFF chỉ có Chờ mang chung và Đang mang của chính mình; số đếm cùng phạm vi. Server chỉ trả READY và PICKED_UP có người nhận là tài khoản hiện tại, không trả suất người khác hoặc SERVED trong API workspace nhân viên. MANAGER vẫn xem mọi suất, có mục Đã phục vụ và lịch sử; chỉ MANAGER còn enabled được GET lịch sử. Không chỉ ẩn nút ở UI. Nhân viên vẫn tra được biên nhận của thao tác mình để khôi phục mất response, kể cả suất đã giao rời workspace. Quyền đọc tiến độ của khách/bếp giữ nguyên theo phạm vi hiện có.
+- Nhân viên/quản lý và bếp nhận invalidation sau commit, đọc lại snapshot; polling/focus/reconnect dự phòng. Bếp tính READY/PICKED_UP/SERVED đều đã chế biến xong, không có nút bếp cho suất đang mang/đã phục vụ; đợt đã phục vụ hết rời mục chờ mang. Khách đọc tổng hợp queued/preparing/ready/pickedUp/served khi tải lại, chỉ trong phiên được gắn; không thấy tên nhân viên hoặc nhật ký nội bộ.
+- Khi POST chưa rõ kết quả, lưu đúng lượt theo username trên trình duyệt, khóa thao tác mới, tra biên nhận trước khi retry cùng UUID/nội dung. Reload chỉ tra, không tự POST. Không xóa dữ liệu trình duyệt lúc chưa xác định. Snapshot cũ có cảnh báo và khóa thao tác cho tới khi đọc thành công.
+- Demo bổ sung `nhanvien2` (STAFF) và `quanly` (MANAGER), mật khẩu ngẫu nhiên riêng trong `.env`; seed mới chỉ profile demo và không reset tài khoản đã có. Quy trình tài khoản thật để 6.10.
+
+Các mục 6.2–6.5 bên dưới ghi phạm vi tại thời điểm đó; nhận mang/phục vụ và quyền quản lý hiện tại theo mục 6.6 này.
+
 ## Bếp đã triển khai — 6.5, 02/11/2026
 
 - Mỗi dòng gọi N suất có đúng N FulfillmentUnit, số thứ tự 1–N. Đơn 6.4 đã lưu được migration bổ sung suất chờ làm, giữ nguyên bàn/phiên/đợt/tên/giá/số lượng/ghi chú.

@@ -1,5 +1,15 @@
 # Màn hình và tương tác
 
+## Nhân viên nhận mang và xác nhận phục vụ — 6.6
+
+- Nhân viên vào **Mang món** (`/#serving`), chỉ có Chờ mang / Đang mang; quản lý có thêm Đã phục vụ. Mỗi thẻ hiện bàn, phiên, đợt, món, ghi chú, số suất trong mục/tổng đã gọi. Chờ từng suất tính từ lúc bếp xong, không tính từ lúc gửi món.
+- Đang mang của STAFF chỉ hiện suất chính mình nhận, số đếm cùng phạm vi; có lời nhắc Chỉ hiển thị món bạn đã nhận mang và trạng thái rỗng Bạn chưa có suất đang mang. Quản lý vẫn xem mọi nhân viên. Chờ mang dùng chung. Nhân viên không có mục Đã phục vụ hoặc nút lịch sử; khi giao thành công, suất rời danh sách công việc của mình.
+- Nhận mang áp dụng đúng một suất; vào Đang mang để xem tên/username người nhận và giờ nhận. Chủ suất có Đã giao suất N và Trả lại suất N. STAFF khác chỉ xem; quản lý xem mọi suất, có Trả lại và phải nhập lý do. Form trả lại cuộn vào vùng nhìn, nêu đúng bàn/món/suất, không có nút giao hàng loạt.
+- Chỉ quản lý xem lịch sử từng suất: nhận/trả/giao, người/thời điểm/lý do. Đã phục vụ của quản lý có giờ giao, còn sau reload; không trở lại Chờ mang hoặc trở thành món phải nấu lại.
+- Xung đột có thông báo rồi đọc lại từ server. Mất response giữ lượt gửi qua reload và khóa nhận/giao mới; Kiểm tra và thử lại tra biên nhận trước, chỉ thử lại đúng lượt nếu chưa lưu. Lỗi snapshot giữ dữ liệu có cảnh báo và khóa thao tác; mất SSE vẫn polling 15 giây, focus/reconnect đọc lại.
+- Nhân viên nhận thông tin trực tiếp qua SSE; quản lý có cùng snapshot để giám sát. Bếp thấy nhãn Đang mang/Đã phục vụ, khách bấm Tải lại món đã gọi để thấy số suất chờ mang/đang mang/đã phục vụ trong phiên mình.
+- Nút ≥48px, thẻ một cột khi hẹp. Điều hướng Mang món chỉ hiện cho STAFF/MANAGER; vùng sidebar thấp ≤500px ẩn nhãn trang trí để giữ Đăng xuất trong tầm nhìn, vẫn cuộn ở chiều cao cực thấp. Chưa thay thế thử Safari/iPad thật.
+
 ## Màn hình bếp đã triển khai — 6.5, 02/11/2026
 
 - /#kitchen chỉ cho bếp: tổng suất chờ/đang làm/đã xong; thẻ bàn + đợt trong phiên + mã đợt + giờ gửi + phút chờ. Đợt cũ trước; còn món sau 15 phút có chữ Chờ lâu và nền cảnh báo.

@@ -17,7 +17,9 @@ import org.springframework.web.client.RestClient;
 @Import(TestcontainersConfiguration.class)
 @SpringBootTest(webEnvironment = SpringBootTest.WebEnvironment.RANDOM_PORT, properties = {
         "DEMO_STAFF_PASSWORD=" + BrowserSession.STAFF_PASSWORD,
-        "DEMO_KITCHEN_PASSWORD=" + BrowserSession.KITCHEN_PASSWORD })
+        "DEMO_KITCHEN_PASSWORD=" + BrowserSession.KITCHEN_PASSWORD,
+        "DEMO_STAFF2_PASSWORD=" + BrowserSession.STAFF_PASSWORD,
+        "DEMO_MANAGER_PASSWORD=" + BrowserSession.STAFF_PASSWORD })
 @ActiveProfiles("demo")
 class RestaurantOrderApplicationTests {
 
@@ -45,7 +47,7 @@ class RestaurantOrderApplicationTests {
 		assertThat(response.getBody().tables().getLast().code()).isEqualTo("B30");
 		assertThat(response.getBody().observedAt()).isNotNull();
 		assertThat(jdbc.queryForObject("SELECT count(*) FROM flyway_schema_history WHERE success", Integer.class))
-				.isEqualTo(9);
+				.isEqualTo(11);
 	}
 
 	@Test

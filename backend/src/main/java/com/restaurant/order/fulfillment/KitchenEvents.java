@@ -15,15 +15,22 @@ import org.springframework.web.servlet.mvc.method.annotation.SseEmitter;
 @EnableScheduling
 @ConditionalOnWebApplication(type = ConditionalOnWebApplication.Type.SERVLET)
 public class KitchenEvents {
-    private record Subscriber(HttpSession session, String username) {}
+    private record Subscriber(HttpSession session, String username, boolean serving) {}
     private final ConcurrentHashMap<SseEmitter, Subscriber> subscribers = new ConcurrentHashMap<>();
     private final KitchenService service;
-    public KitchenEvents(KitchenService service) { this.service = service; }
+    private final ServingService serving;
+    public KitchenEvents(KitchenService service, ServingService serving) { this.service = service; this.serving = serving; }
 
     public SseEmitter subscribe(HttpSession session, String username) {
-        service.requireKitchen(username);
+        return subscribe(session, username, false);
+    }
+    public SseEmitter subscribeServing(HttpSession session, String username) {
+        return subscribe(session, username, true);
+    }
+    private SseEmitter subscribe(HttpSession session, String username, boolean isServing) {
+        if (isServing) serving.requireReader(username); else service.requireKitchen(username);
         var emitter = new SseEmitter(60000L);
-        subscribers.put(emitter, new Subscriber(session, username));
+        subscribers.put(emitter, new Subscriber(session, username, isServing));
         emitter.onCompletion(() -> subscribers.remove(emitter));
         emitter.onTimeout(() -> { subscribers.remove(emitter); emitter.complete(); });
         emitter.onError(error -> subscribers.remove(emitter));
@@ -35,7 +42,7 @@ public class KitchenEvents {
             Object value = subscriber.session().getAttribute(HttpSessionSecurityContextRepository.SPRING_SECURITY_CONTEXT_KEY);
             if (!(value instanceof SecurityContext context) || context.getAuthentication() == null
                     || !subscriber.username().equals(context.getAuthentication().getName())) throw new IllegalStateException("Session ended");
-            service.requireKitchen(subscriber.username());
+            if (subscriber.serving()) serving.requireReader(subscriber.username()); else service.requireKitchen(subscriber.username());
             emitter.send(SseEmitter.event().name(name).data("reload"));
         } catch (Exception exception) {
             subscribers.remove(emitter);

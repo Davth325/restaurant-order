@@ -21,7 +21,9 @@ import org.springframework.web.client.RestClient;
 @Import({TestcontainersConfiguration.class, IdentityIntegrationTests.FastExpiry.class})
 @SpringBootTest(webEnvironment = SpringBootTest.WebEnvironment.RANDOM_PORT, properties = {
         "DEMO_STAFF_PASSWORD=" + BrowserSession.STAFF_PASSWORD,
-        "DEMO_KITCHEN_PASSWORD=" + BrowserSession.KITCHEN_PASSWORD })
+        "DEMO_KITCHEN_PASSWORD=" + BrowserSession.KITCHEN_PASSWORD,
+        "DEMO_STAFF2_PASSWORD=" + BrowserSession.STAFF_PASSWORD,
+        "DEMO_MANAGER_PASSWORD=" + BrowserSession.STAFF_PASSWORD })
 @ActiveProfiles("demo")
 class IdentityIntegrationTests {
     @TestConfiguration(proxyBeanMethods = false)
@@ -124,6 +126,6 @@ class IdentityIntegrationTests {
         assertThat(encoder.matches(BrowserSession.KITCHEN_PASSWORD, hash)).isTrue();
         flyway.migrate();
         assertThat(jdbc.queryForObject("SELECT password_hash FROM staff_user WHERE username = 'bep'", String.class)).isEqualTo(hash);
-        assertThat(jdbc.queryForObject("SELECT count(*) FROM staff_user", Integer.class)).isEqualTo(2);
+        assertThat(jdbc.queryForObject("SELECT count(*) FROM staff_user", Integer.class)).isEqualTo(4);
     }
 }

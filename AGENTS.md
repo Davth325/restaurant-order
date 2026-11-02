@@ -44,3 +44,4 @@
 - Kiểm tra live 6.4: `.\scripts\Verify-GuestOrdering.ps1` sau build/db, Chromium đã cài, cổng 8081 trống; script dùng database tạm riêng, không tiêu thụ bàn/đơn demo. Test UI thường mô phỏng guest để kiểm tra trạng thái lỗi, không coi mock là bằng chứng database.
 
 - Kiểm tra live 6.5: `.\scripts\Verify-Kitchen.ps1` sau build/db, Chromium, cổng 8081 trống; dùng DB tạm riêng, kiểm hai bếp/SSE/từng suất/reconnect/restart. Chạy tuần tự với Verify-GuestOrdering vì cùng cổng. Bếp mở trực ca có polling giữ session, logout khi kết thúc.
+- Kiểm tra live 6.6: `.\scripts\Verify-Serving.ps1` sau build/db, Chromium, cổng 8081 trống; DB tạm riêng, hai nhân viên/giao từng suất/trả hàng/lịch sử/reload/restart. Chạy tuần tự với hai verifier cũ. `nhanvien2`/`quanly` có mật khẩu riêng sinh bởi Initialize-Dev; quản lý chỉ có quyền serving trong 6.6.

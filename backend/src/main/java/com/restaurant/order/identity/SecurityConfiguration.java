@@ -22,7 +22,8 @@ public class SecurityConfiguration {
                         // session. Initial REQUEST dispatches still require KITCHEN below.
                         .requestMatchers(request -> request.getDispatcherType() == DispatcherType.ASYNC
                                 && request.getMethod().equals("GET")
-                                && request.getRequestURI().equals(request.getContextPath() + "/api/kitchen/events")).permitAll()
+                                && (request.getRequestURI().equals(request.getContextPath() + "/api/kitchen/events")
+                                    || request.getRequestURI().equals(request.getContextPath() + "/api/serving/events"))).permitAll()
                         .requestMatchers(HttpMethod.GET, "/", "/index.html", "/assets/**", "/menu-images/**", "/favicon.svg", "/favicon.ico",
                                 "/actuator/health", "/api/menu", "/api/auth/csrf").permitAll()
                         .requestMatchers("/api/auth/login").permitAll()
@@ -32,6 +33,8 @@ public class SecurityConfiguration {
                         .requestMatchers(HttpMethod.GET, "/api/auth/me").authenticated()
                         .requestMatchers("/api/tables", "/api/tables/**", "/api/staff/**").hasRole("STAFF")
                         .requestMatchers("/api/kitchen/**").hasRole("KITCHEN")
+                        .requestMatchers(HttpMethod.GET, "/api/serving/units/*/history").hasRole("MANAGER")
+                        .requestMatchers("/api/serving/**").hasAnyRole("STAFF", "MANAGER")
                         .anyRequest().denyAll())
                 // Keep Spring's session CSRF repository and masked tokens. The SPA fetches a fresh
                 // token before each POST; login and logout clear the previous token by default.

@@ -13,7 +13,7 @@ if (Test-Path -LiteralPath $envFile) {
     $template = Get-Content -LiteralPath (Join-Path $projectRoot '.env.example') -Raw
     $template = $template.Replace('example_only_replace_me', (New-LocalPassword))
 }
-foreach ($key in @('DEMO_STAFF_PASSWORD', 'DEMO_KITCHEN_PASSWORD')) {
+foreach ($key in @('DEMO_STAFF_PASSWORD', 'DEMO_KITCHEN_PASSWORD', 'DEMO_STAFF2_PASSWORD', 'DEMO_MANAGER_PASSWORD')) {
     if ($template -notmatch "(?m)^$key=") {
         $template = $template.TrimEnd() + "`n$key=$(New-LocalPassword)`n"
     }
