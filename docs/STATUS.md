@@ -2,6 +2,8 @@
 
 Cập nhật mới nhất ngày **11/11/2026**. Chủ dự án đã thử và chốt 6.7 theo D029. Khách tự hủy suất còn chờ bếp, không nhập lý do hay chờ duyệt. Bản demo tại http://127.0.0.1:8080. Bước tiếp là **6.8 — tính và thu tiền**.
 
+- Commit chức năng [`1d5d9eb`](https://github.com/Davth325/restaurant-order/commit/1d5d9ebabc534469c3e72cfb8993aab8abb02dbe) đã lên `main`. [CI lần đầu](https://github.com/Davth325/restaurant-order/actions/runs/43054922193) đạt build frontend, Gradle/PostgreSQL và khởi động demo. Bước cài Chromium dừng trước khi chạy Playwright vì runner không phân giải được kho Ubuntu để tải thêm font, apt exit 100.
+- Workflow dùng Chromium headless shell từ Playwright với thư viện sẵn trên runner Ubuntu. Tách bước tải trình duyệt và giữ nguyên bộ Playwright để kết quả CI phân biệt được lỗi cài đặt với lỗi test.
 - V10 lưu biên nhận tự hủy cùng transaction với cập nhật suất và tạm tính. Yêu cầu chờ duyệt cũ được kết thúc mà không thay đổi suất hay tiền. Luồng điều chỉnh nội bộ của quản lý có lý do và lịch sử riêng.
 - Đã review quyền khách theo phiên, CSRF, quyền quản lý, retry cùng khóa, mất phản hồi và cuộc đua với bếp. Khóa phiên chung bảo đảm một trong hai thao tác thắng. Chỉ suất hủy thành công bị loại khỏi tạm tính.
 - `backend/gradlew.bat -p backend --no-daemon test` đạt 49/49. Frontend `typecheck`, `lint`, `build` và Gradle `bootJar` đạt. `Start-Preview.ps1` mở bản mới và Flyway áp dụng V10 thành công trên volume demo.
