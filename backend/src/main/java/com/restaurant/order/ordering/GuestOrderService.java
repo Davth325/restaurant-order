@@ -25,9 +25,9 @@ public class GuestOrderService {
     public record Binding(String token, GuestSession session) {}
     public record Line(Long menuItemId, Integer quantity, Long expectedPriceVnd, List<Long> optionIds, String note) {}
     public record Submit(UUID requestKey, List<Line> items) {}
-    public record Progress(int queued, int preparing, int ready, int pickedUp, int served) {}
-    public record Item(long id, long menuItemId, String name, long unitPriceVnd, int quantity, String note, String status, Progress progress) {}
-    public record Batch(long id, UUID requestKey, Instant createdAt, long totalVnd, List<Item> items) {}
+    public record Progress(int queued, int preparing, int ready, int pickedUp, int served, int cancelled) {}
+    public record Item(long id, long menuItemId, String name, long unitPriceVnd, int quantity, String note, String status, Progress progress, int excludedQuantity) {}
+    public record Batch(long id, UUID requestKey, Instant createdAt, long totalVnd, List<Item> items, long netTotalVnd) {}
     private static final long MAX_MONEY = 9007199254740991L;
     private static final SecureRandom RANDOM = new SecureRandom();
     private final JdbcTemplate jdbc;
@@ -99,7 +99,7 @@ public class GuestOrderService {
         return new Binding(token, session);
     }
 
-    private GuestSession authorize(String token, Long requestedSession) {
+    public GuestSession authorize(String token, Long requestedSession) {
         if (token == null || !token.matches("[A-Za-z0-9_-]{32}"))
             throw fail(HttpStatus.UNAUTHORIZED, "GUEST_REQUIRED", "Tablet chưa được gắn hoặc quyền đã hết hạn. Vui lòng gọi nhân viên.");
         var ids = jdbc.queryForList("SELECT session_id FROM guest_device WHERE token_hash = ? AND expires_at > CURRENT_TIMESTAMP", Long.class, hash(token));
@@ -130,17 +130,20 @@ public class GuestOrderService {
                     count(*) FILTER (WHERE u.status = 'PREPARING') AS preparing,
                     count(*) FILTER (WHERE u.status = 'READY') AS ready,
                     count(*) FILTER (WHERE u.status = 'PICKED_UP') AS picked_up,
-                    count(*) FILTER (WHERE u.status = 'SERVED') AS served
+                    count(*) FILTER (WHERE u.status = 'SERVED') AS served,
+                    count(*) FILTER (WHERE u.status = 'CANCELLED') AS cancelled,
+                    count(*) FILTER (WHERE u.bill_excluded) AS excluded
                 FROM order_item i JOIN fulfillment_unit u ON u.order_item_id = i.id
                 WHERE i.batch_id = ? GROUP BY i.id ORDER BY i.id
                 """, (rs, row) -> new Item(
                 rs.getLong("id"), rs.getLong("menu_item_id"), rs.getString("item_name"), rs.getLong("unit_price_vnd"),
-                rs.getInt("quantity"), rs.getString("note"), rs.getInt("served") == rs.getInt("quantity") ? "SERVED"
+                rs.getInt("quantity"), rs.getString("note"), rs.getInt("cancelled") == rs.getInt("quantity") ? "CANCELLED" : rs.getInt("served") == rs.getInt("quantity") ? "SERVED"
                     : rs.getInt("served") > 0 ? "PARTIALLY_SERVED" : rs.getInt("picked_up") > 0 ? "PICKED_UP" : rs.getInt("ready") == rs.getInt("quantity") ? "READY"
                     : rs.getInt("ready") > 0 ? "PARTIALLY_READY" : rs.getInt("preparing") > 0 ? "PREPARING" : "QUEUED",
-                new Progress(rs.getInt("queued"), rs.getInt("preparing"), rs.getInt("ready"), rs.getInt("picked_up"), rs.getInt("served"))), id);
+                new Progress(rs.getInt("queued"), rs.getInt("preparing"), rs.getInt("ready"), rs.getInt("picked_up"), rs.getInt("served"), rs.getInt("cancelled")), rs.getInt("excluded")), id);
+        long netTotal = items.stream().mapToLong(item -> item.unitPriceVnd() * (item.quantity() - item.excludedQuantity())).sum();
         return jdbc.queryForObject("SELECT * FROM order_batch WHERE id = ?", (rs, row) -> new Batch(id,
-                rs.getObject("request_key", UUID.class), rs.getTimestamp("created_at").toInstant(), rs.getLong("total_vnd"), items), id);
+                rs.getObject("request_key", UUID.class), rs.getTimestamp("created_at").toInstant(), rs.getLong("total_vnd"), items, netTotal), id);
     }
     private String validateAndHash(Submit request) {
         if (request == null || request.requestKey() == null || request.items() == null || request.items().isEmpty() || request.items().size() > 30)
@@ -163,11 +166,45 @@ public class GuestOrderService {
     @Transactional
     public Batch submit(String token, long sessionId, Submit request) {
         var session = authorize(token, sessionId);
+        return submitOrder(session, request, null);
+    }
+
+    private long requireStaff(String username) {
+        var ids = jdbc.queryForList("SELECT id FROM staff_user WHERE username = ? AND role = 'STAFF' AND enabled", Long.class, username);
+        if (ids.isEmpty()) throw fail(HttpStatus.FORBIDDEN, "STAFF_REQUIRED", "Tài khoản không còn quyền gọi thay khách.");
+        return ids.getFirst();
+    }
+    @Transactional
+    public GuestSession staffSession(String username, long sessionId) {
+        requireStaff(username);
+        return lockSession(sessionId);
+    }
+    @Transactional
+    public List<Batch> staffOrders(String username, long sessionId) {
+        requireStaff(username); lockSession(sessionId);
+        return jdbc.queryForList("SELECT id FROM order_batch WHERE session_id = ? ORDER BY id", Long.class, sessionId)
+                .stream().map(this::batch).toList();
+    }
+    @Transactional
+    public Batch staffByKey(String username, long sessionId, UUID key) {
+        long actor = requireStaff(username); lockSession(sessionId);
+        var ids = jdbc.queryForList("SELECT id FROM order_batch WHERE session_id = ? AND request_key = ? AND created_by = ?", Long.class, sessionId, key, actor);
+        if (ids.isEmpty()) throw fail(HttpStatus.NOT_FOUND, "ORDER_NOT_FOUND", "Chưa thấy lượt gọi thay này.");
+        return batch(ids.getFirst());
+    }
+    @Transactional
+    public Batch staffSubmit(String username, long sessionId, Submit request) {
+        long actor = requireStaff(username);
+        return submitOrder(lockSession(sessionId), request, actor);
+    }
+    private Batch submitOrder(GuestSession session, Submit request, Long actor) {
+        long sessionId = session.id();
         String fingerprint = validateAndHash(request);
         var previous = jdbc.queryForList("SELECT id FROM order_batch WHERE session_id = ? AND request_key = ?", Long.class, sessionId, request.requestKey());
         if (!previous.isEmpty()) {
             String savedHash = jdbc.queryForObject("SELECT request_hash FROM order_batch WHERE id = ?", String.class, previous.getFirst());
-            if (!fingerprint.equals(savedHash)) throw fail(HttpStatus.CONFLICT, "IDEMPOTENCY_CONFLICT", "Khóa gửi đã được dùng cho nội dung khác. Hãy kiểm tra các món đã gọi.");
+            Long savedActor = jdbc.queryForObject("SELECT created_by FROM order_batch WHERE id = ?", Long.class, previous.getFirst());
+            if (!fingerprint.equals(savedHash) || !java.util.Objects.equals(actor, savedActor)) throw fail(HttpStatus.CONFLICT, "IDEMPOTENCY_CONFLICT", "Khóa gửi đã được dùng cho nội dung hoặc người thao tác khác. Hãy kiểm tra các món đã gọi.");
             return batch(previous.getFirst());
         }
         requireOpen(session);
@@ -189,8 +226,10 @@ public class GuestOrderService {
                 throw fail(HttpStatus.BAD_REQUEST, "TOTAL_TOO_LARGE", "Tạm tính vượt giới hạn hỗ trợ.");
             total += item.price() * line.quantity();
         }
-        Long id = jdbc.queryForObject("INSERT INTO order_batch(session_id, request_key, request_hash, total_vnd) VALUES (?, ?, ?, ?) RETURNING id",
-                Long.class, sessionId, request.requestKey(), fingerprint, total);
+        long previousTotal = jdbc.queryForObject("SELECT COALESCE(sum(total_vnd), 0) FROM order_batch WHERE session_id = ?", Long.class, sessionId);
+        if (total > MAX_MONEY - previousTotal) throw fail(HttpStatus.BAD_REQUEST, "TOTAL_TOO_LARGE", "Tạm tính phiên vượt giới hạn hỗ trợ.");
+        Long id = jdbc.queryForObject("INSERT INTO order_batch(session_id, request_key, request_hash, total_vnd, created_by) VALUES (?, ?, ?, ?, ?) RETURNING id",
+                Long.class, sessionId, request.requestKey(), fingerprint, total, actor);
         for (var line : request.items()) {
             var item = catalog.get(line.menuItemId());
             Long lineId = jdbc.queryForObject("INSERT INTO order_item(batch_id, menu_item_id, item_name, unit_price_vnd, quantity, note) VALUES (?, ?, ?, ?, ?, ?) RETURNING id",

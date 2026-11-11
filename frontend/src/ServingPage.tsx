@@ -99,6 +99,7 @@ export default function ServingPage({ staff, onUnauthorized }: { staff: Staff; o
   for (const unit of units.filter(u => u.status === view)) groups.set(unit.itemId, [...(groups.get(unit.itemId) ?? []), unit])
   const locked = stale || busy || !!pending
   return <main className="internal-page kitchen-page serving-page">
+    {staff.role === 'MANAGER' && <a className="text-link" href="#cancellations">Điều chỉnh món</a>}
     <div className="kitchen-heading"><div><p className="eyebrow">TỪ BẾP TỚI BÀN</p><h1>{staff.role === 'MANAGER' ? 'Giám sát phục vụ' : 'Mang món & phục vụ'}</h1><p className="intro">Nhận từng suất và xác nhận khi đã giao tới khách.</p></div><button className="refresh" onClick={() => void load()}>Tải lại món phục vụ</button></div>
     <p className={`kitchen-connection ${stale || !stream ? 'degraded' : ''}`} role="status">{stale ? 'Dữ liệu có thể đã cũ · Đã khóa thao tác' : stream ? 'Đang kết nối hệ thống quán · Cập nhật trực tiếp' : 'Mất kết nối cập nhật trực tiếp · Đang tải lại mỗi 15 giây'}</p>
     {snapshot && <p className="kitchen-observed">Đọc gần nhất: {new Date(snapshot.observedAt).toLocaleTimeString('vi-VN')}</p>}

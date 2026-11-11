@@ -35,6 +35,7 @@ public class SecurityConfiguration {
                         .requestMatchers("/api/kitchen/**").hasRole("KITCHEN")
                         .requestMatchers(HttpMethod.GET, "/api/serving/units/*/history").hasRole("MANAGER")
                         .requestMatchers("/api/serving/**").hasAnyRole("STAFF", "MANAGER")
+                        .requestMatchers("/api/cancellations/**").hasRole("MANAGER")
                         .anyRequest().denyAll())
                 // Keep Spring's session CSRF repository and masked tokens. The SPA fetches a fresh
                 // token before each POST; login and logout clear the previous token by default.

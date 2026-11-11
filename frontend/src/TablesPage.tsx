@@ -221,6 +221,7 @@ function TablesPage({ onUnauthorized }: { onUnauthorized: () => void }) {
             </dl>}
             {!detailLoading && !detailError && !error && !loading && selected.currentSession?.status === 'OPEN' && <PairingPanel key={selected.currentSession.id} sessionId={selected.currentSession.id} tableCode={selected.code} onUnauthorized={onUnauthorized} />}
             {!detailLoading && !selected.currentSession && <p>{selected.status === 'AVAILABLE' ? 'Bàn trống, sẵn sàng đón lượt khách mới.' : 'Bàn chưa sẵn sàng để mở phiên mới.'}</p>}
+            {selected.currentSession && !detailLoading && !detailError && <a className="text-link" href={`#order/${selected.currentSession.id}`}>Gọi thay khách / xem tạm tính {selected.code}</a>}
             <div className="detail-actions">
               {selected.status === 'AVAILABLE' && !selected.currentSession && <button className="open-session" onClick={() => void openSession()} disabled={opening || detailLoading || !!detailError || uncertain || loading || error}>{opening ? 'Đang mở…' : `Mở phiên ${selected.code}`}</button>}
               <button className="refresh" disabled={opening || detailLoading} onClick={() => { void selectTable(selected); setLoading(true); void loadTables() }}>Kiểm tra trạng thái {selected.code}</button>

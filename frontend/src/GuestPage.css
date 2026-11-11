@@ -18,6 +18,13 @@
 .guest-actions { display: flex; gap: 12px; flex-wrap: wrap; }
 .guest-message { background: #ede8d9; border-left: 4px solid #667045; padding: 18px; overflow-wrap: anywhere; }
 .order-batch { border-top: 1px solid #e2ddd1; padding: 12px 0; }
+.cancellation-panel button, .cancellation-panel textarea { min-height: 44px; font: inherit; }
+.cancellation-panel button { padding: 10px 14px; border: 1px solid #bcb5a7; border-radius: 8px; cursor: pointer; }
+.cancellation-panel button:disabled { opacity: .55; cursor: default; }
+.cancellation-panel label { display: grid; gap: 8px; margin: 16px 0; }
+.cancellation-panel textarea { width: 100%; box-sizing: border-box; padding: 10px; }
+.cancellation-panel .detail-heading { flex-wrap: wrap; }
+.guest-page > .cancellation-panel { margin: 0 5% 22px; }
 .pairing-panel { margin: 18px 0; padding: 18px; border: 1px solid #ded6c5; border-radius: 10px; overflow-wrap: anywhere; }
 .pairing-panel code { display: block; font-size: 20px; margin: 12px 0; user-select: all; overflow-wrap: anywhere; }
 @media (max-width: 600px) { .cart-line { grid-template-columns: 1fr; } .guest-panel { padding: 16px; } .guest-page .detail-heading { flex-wrap: wrap; } }

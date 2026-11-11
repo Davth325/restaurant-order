@@ -1,5 +1,12 @@
 # Vận hành và phục hồi
 
+## Ngoại lệ local sau 6.7
+
+- V8–V10 nâng schema, bảo toàn đợt gốc/actor/time/tiến độ phục vụ. Giữ volume/.env, không reset đơn demo. Dừng preview trước build; Ctrl+F5 từng browser sau cập nhật và login lại sau restart.
+- Sau khi khách xác nhận, kiểm bếp thấy suất đã hủy trong **Món đã hủy / loại tiền** và tạm tính khách đã giảm. Các yêu cầu chờ duyệt từ bản trước kết thúc khi nâng V10. Khách có thể xác nhận hủy lại theo trạng thái hiện tại của suất.
+- Giữ storage khi POST chưa rõ kết quả; dùng tra biên nhận trước retry cùng khóa. Không tự tạo thao tác thay thế, không xóa lịch sử hoặc sửa SQL để đưa món trở lại. Quản lý xử lý tranh chấp sau đọc snapshot mới.
+- Verify-Exceptions.ps1 dùng DB verify_exceptions_<guid>/8081; chạy tuần tự với ba verifier cũ, không rebuild jar trong lúc thử. .work/exceptions-live-state.json có cookie kiểm thử, bị Git ignore. Chưa mở LAN/HTTPS hoặc thu tiền; tạm tính không thay thế chốt bill 6.8.
+
 ## Nhận mang local sau 6.6
 
 - Sau cập nhật jar, tải lại từng cửa sổ bằng Ctrl+F5 để thay mã UI đang chạy trong bộ nhớ, rồi đăng nhập lại nếu server vừa restart. Header index hiện no-store không tự thay JavaScript của tab đã mở. Không xóa cookie/localStorage khi còn thao tác chưa rõ kết quả. Backend hiện lọc scope theo principal nên client cũ đọc lại cũng không nhận suất người khác hoặc SERVED của workspace STAFF; lịch sử trả 403 cho STAFF.

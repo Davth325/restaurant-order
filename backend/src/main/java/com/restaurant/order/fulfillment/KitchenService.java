@@ -12,7 +12,8 @@ import org.springframework.transaction.annotation.Transactional;
 @Service
 public class KitchenService {
     public record Unit(long id, long itemId, int number, String status, long batchId, long batchNumber,
-            long sessionId, String tableCode, Instant createdAt, String name, int quantity, String note) {}
+            long sessionId, String tableCode, Instant createdAt, String name, int quantity, String note,
+            boolean guestCancelled, boolean billExcluded, String cancellationReason) {}
     public record Snapshot(List<Unit> units, Instant observedAt) {}
     private final JdbcTemplate jdbc;
     private final ApplicationEventPublisher events;
@@ -32,7 +33,9 @@ public class KitchenService {
                     SELECT b.*, row_number() OVER (PARTITION BY session_id ORDER BY id) AS batch_number FROM order_batch b
                 )
                 SELECT u.id, u.order_item_id, u.unit_number, u.status, b.id AS batch_id, b.batch_number,
-                       s.id AS session_id, t.code, b.created_at, i.item_name, i.quantity, i.note
+                       s.id AS session_id, t.code, b.created_at, i.item_name, i.quantity, i.note, u.bill_excluded,
+                       EXISTS (SELECT 1 FROM guest_cancellation c WHERE c.unit_id = u.id) AS guest_cancelled,
+                       (SELECT reason FROM cancellation_operation o WHERE o.unit_id = u.id AND action <> 'REJECT' ORDER BY occurred_at DESC LIMIT 1) AS cancel_reason
                 FROM fulfillment_unit u JOIN order_item i ON i.id = u.order_item_id
                 JOIN batches b ON b.id = i.batch_id JOIN table_session s ON s.id = b.session_id
                 JOIN restaurant_table t ON t.id = s.table_id WHERE s.status IN ('OPEN', 'CHECKOUT_PENDING')
@@ -40,7 +43,7 @@ public class KitchenService {
                 """, (rs, row) -> new Unit(rs.getLong("id"), rs.getLong("order_item_id"), rs.getInt("unit_number"),
                 rs.getString("status"), rs.getLong("batch_id"), rs.getLong("batch_number"), rs.getLong("session_id"),
                 rs.getString("code"), rs.getTimestamp("created_at").toInstant(), rs.getString("item_name"),
-                rs.getInt("quantity"), rs.getString("note")));
+                rs.getInt("quantity"), rs.getString("note"), rs.getBoolean("guest_cancelled"), rs.getBoolean("bill_excluded"), rs.getString("cancel_reason")));
         return new Snapshot(units, Instant.now());
     }
 

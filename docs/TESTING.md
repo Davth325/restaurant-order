@@ -1,6 +1,13 @@
 # Kiểm thử và điều kiện nghiệm thu
 
-Hiện có integration test PostgreSQL/Testcontainers và E2E Chromium tới bước 6.6: schema/seed/menu/bàn, đăng nhập 6.2, mở phiên 6.3, tablet và gửi món 6.4, bếp/từng suất/SSE 6.5, nhận mang/phục vụ/lịch sử/quản lý 6.6. Kết quả thực tế ở STATUS, cách chạy ở README. Các mục ghi “giai đoạn sau” cùng kịch bản tiền/mạng chưa triển khai vẫn là yêu cầu, không được coi là đã kiểm tra.
+Hiện có integration test PostgreSQL/Testcontainers và E2E Chromium tới bước 6.7: schema/seed/menu/bàn, đăng nhập 6.2, mở phiên 6.3, tablet và gửi món 6.4, bếp/từng suất/SSE 6.5, nhận mang/phục vụ/lịch sử/quản lý 6.6. Kết quả thực tế ở STATUS, cách chạy ở README. Các mục ghi “giai đoạn sau” cùng kịch bản tiền/mạng chưa triển khai vẫn là yêu cầu, không được coi là đã kiểm tra.
+
+## Gọi thêm và ngoại lệ — 6.7
+
+- CancellationIntegrationTests dùng HTTP/cookie/CSRF và PostgreSQL. Kiểm gọi thêm/gọi thay, khách tự hủy đúng một suất QUEUED, giữ giá gốc, tạm tính giảm ngay, retry cùng khóa, khóa trùng khác nội dung, tra biên nhận, và rollback khi ghi biên nhận lỗi.
+- Kiểm khách bị chặn từ PREPARING tới SERVED, sai phiên/đóng phiên/thiếu CSRF, điều chỉnh nội bộ theo quyền và lý do, API duyệt cũ không tạo quyết định mới. Tranh chấp hủy và bếp bắt đầu cùng chờ khóa phiên, một thắng và một 409. Kiểm V10 kết thúc yêu cầu cũ mà không đổi suất/giá/lịch sử.
+- cancellations.spec.ts kiểm hủy không lý do, mất response/reload/tra biên nhận, bếp thắng xung đột thì nút hủy biến mất, điều chỉnh nội bộ và hết quyền. Kiểm mock UI bổ sung cho test PostgreSQL.
+- Verify-Exceptions.ps1 dùng DB tạm và Chromium thật. Kiểm hai đợt, tự hủy dù mất response, chặn hủy khi bếp bắt đầu, bếp thấy khách hủy, điều chỉnh quản lý, tạm tính 90.000đ từ 225.000đ gốc, và restart.
 
 ## Kiểm tra bộ khung M1
 

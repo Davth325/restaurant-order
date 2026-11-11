@@ -45,3 +45,4 @@
 
 - Kiểm tra live 6.5: `.\scripts\Verify-Kitchen.ps1` sau build/db, Chromium, cổng 8081 trống; dùng DB tạm riêng, kiểm hai bếp/SSE/từng suất/reconnect/restart. Chạy tuần tự với Verify-GuestOrdering vì cùng cổng. Bếp mở trực ca có polling giữ session, logout khi kết thúc.
 - Kiểm tra live 6.6: `.\scripts\Verify-Serving.ps1` sau build/db, Chromium, cổng 8081 trống; DB tạm riêng, hai nhân viên/giao từng suất/trả hàng/lịch sử/reload/restart. Chạy tuần tự với hai verifier cũ. `nhanvien2`/`quanly` có mật khẩu riêng sinh bởi Initialize-Dev; quản lý chỉ có quyền serving trong 6.6.
+- Kiểm tra live 6.7: `.\scripts\Verify-Exceptions.ps1` sau build/db, Chromium, cổng 8081 trống; DB tạm riêng, gọi thêm/gọi thay/hủy/loại SERVED/tạm tính/retry/restart. Chạy tuần tự với ba verifier cũ, không rebuild jar đang được verifier dùng. Luật khách tự hủy đã được chủ dự án cập nhật 11/11/2026 ở DOMAIN/D029; tiền khác để 6.8.

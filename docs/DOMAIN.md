@@ -2,6 +2,18 @@
 
 Các quy tắc dưới đây là thiết kế đề xuất cho bản đầu, trừ những yêu cầu được đánh dấu xác nhận trong PRODUCT.
 
+## Gọi thêm và ngoại lệ — 6.7, cập nhật theo yêu cầu 11/11/2026
+
+- Một lần xác nhận tạo đợt mới trong cùng phiên; không ghi đè đợt/dòng/số lượng/giá gốc. STAFF enabled gọi thay, lưu created_by từ principal ở database. MANAGER không tự kế thừa quyền gọi thay/mở bàn.
+- Giữ cơ chế nhận toàn bộ hoặc từ chối toàn bộ khi món hết/giá đổi và idempotency 6.4. Cùng phiên/UUID nhưng nội dung hoặc nhân viên khác trả IDEMPOTENCY_CONFLICT, kể cả đổi kênh khách/nhân viên. Thiết bị khác cùng phiên vẫn được tra/retry đợt khách theo chính sách nhiều tablet đã chốt. UI so biên nhận UUID/từng món/số lượng/giá/ghi chú trước giải phóng pending.
+- Khách tự hủy **từng suất còn QUEUED** thuộc phiên bàn đang hoạt động. Xác nhận hủy có hiệu lực ngay, không cần lý do hay duyệt. Từ PREPARING trở đi, khách không thể hủy. Lượt hủy giữ dấu vết thiết bị và thời điểm, không xóa suất hay đợt gốc.
+- Gửi lại cùng khóa, cùng thiết bị và cùng suất trả thành công cũ. Cùng khóa khác suất hoặc thiết bị báo xung đột. Khóa phiên dùng chung với bếp: nếu bếp bắt đầu trước, khách nhận 409 và tạm tính giữ nguyên. Nếu khách hủy trước, bếp nhận 409 khi cố bắt đầu suất đó.
+- Hủy thành công chuyển suất sang CANCELLED, tăng version và loại đúng suất khỏi tạm tính trong cùng transaction với biên nhận. Bếp đọc kết quả sau commit và hiển thị ở **Món đã hủy / loại tiền**. Snapshot khôi phục sau reconnect/restart. Serving không trả CANCELLED vào Chờ mang/Đang mang.
+- Quản lý có chức năng điều chỉnh nội bộ, tách khỏi luồng khách. Quản lý enabled có thể hủy trực tiếp suất chưa giao hoặc loại suất đã giao khỏi tạm tính, có lý do và lịch sử. SERVED giữ trạng thái, người và giờ giao. STAFF không có hàng chờ duyệt hủy hay quyền điều chỉnh này.
+- totalVnd là tổng gốc. netTotalVnd tính từ giá gốc của các suất chưa loại. Tạm tính phiên cộng netTotalVnd mọi đợt, mỗi suất chỉ loại một lần. Chốt hóa đơn và thu tiền thuộc 6.8. Tổng gốc tích lũy của phiên chịu giới hạn JSON an toàn.
+
+Các mục 6.2–6.6 bên dưới ghi phạm vi ở thời điểm cũ; luật hủy/tạm tính hiện tại theo mục 6.7 này.
+
 ## Nhận mang và phục vụ đã triển khai — 6.6, 02/11/2026
 
 - Luồng từng suất: QUEUED → PREPARING → READY (bếp đã xong, chờ mang) → PICKED_UP (nhân viên đã nhận) → SERVED (đã giao tới khách). Không đổi trạng thái cả bàn/dòng khi chỉ giao một suất. Trạng thái suất là nguồn chính, tiền/đợt gọi giữ nguyên.
@@ -110,7 +122,7 @@ Phiên chưa phát sinh món có thể kết thúc không thu tiền; vẫn có 
 - Nếu giá thay đổi từ lúc khách mở menu, trả giá mới để khách xác nhận; không âm thầm tính cao hơn.
 - Mỗi yêu cầu gửi có khóa chống trùng. Gửi lại cùng khóa, cùng nội dung trả kết quả cũ; khác nội dung báo xung đột.
 - Khi timeout sau gửi, UI hiển thị “chưa xác định, đang kiểm tra”, tra lại trạng thái rồi thử lại cùng khóa. Không tự tạo khóa mới cho cùng lượt bấm.
-- Khách không được xóa trực tiếp món đã gửi. Gửi yêu cầu hủy; nhân viên/bếp/quản lý xử lý theo trạng thái và quyền.
+- Khách tự hủy từng suất còn chờ bếp theo luật 6.7 ở trên. Đợt và suất gốc vẫn có trong lịch sử.
 - Sau khi bếp bắt đầu, mọi hủy/loại khỏi bill phải có lý do và thông báo cho bếp. Không xóa lịch sử để làm mất dấu món đã chế biến.
 
 ## Bếp và phục vụ

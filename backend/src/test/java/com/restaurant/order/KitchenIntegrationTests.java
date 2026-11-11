@@ -195,6 +195,7 @@ class KitchenIntegrationTests {
                     """);
             var before = jdbc.queryForMap("SELECT id, batch_id, menu_item_id, item_name, unit_price_vnd, quantity, note FROM kitchen_upgrade_test.order_item");
             var batch = jdbc.queryForMap("SELECT * FROM kitchen_upgrade_test.order_batch");
+            batch.put("created_by", null); // V8 preserves old guest batches without inventing a staff actor.
             org.flywaydb.core.Flyway.configure().dataSource(dataSource).schemas(schema).defaultSchema(schema)
                     .locations("classpath:db/migration").load().migrate();
             assertThat(jdbc.queryForMap("SELECT * FROM kitchen_upgrade_test.order_item")).isEqualTo(before);

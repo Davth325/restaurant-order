@@ -2,6 +2,8 @@
 
 ## Đã xác nhận
 
+Ngày 03/11/2026, chủ dự án giao 6.7 gồm gọi thêm, hết món, hủy và chống trùng. Ngày 11/11/2026, chủ dự án nghiệm thu bản cập nhật theo D029/DOMAIN. Khách tự hủy từng suất còn chờ bếp, không cần lý do hay duyệt. Khi bếp bắt đầu thì khách không thể hủy. Gọi thay có người thao tác. Bước tiếp là 6.8 tính và thu tiền. Các đoạn phía dưới mô tả phạm vi tại thời điểm cũ.
+
 Ngày 02/11/2026, chủ dự án giao **6.6 — nhân viên nhận mang và xác nhận phục vụ**: hàng chờ theo bàn/món/suất/thời gian, tách bếp xong/nhận mang/đã phục vụ, chỉ một người nhận cùng suất, trả lại có quyền và lịch sử, giao từng phần, nhân viên nhận thông tin trực tiếp và quản lý giám sát. Đã triển khai, người dùng giao chốt sau các phản hồi thử; chính sách quyền chi tiết ở DOMAIN, bằng chứng kiểm tra/commit/CI ở STATUS. Chưa triển khai 6.7.
 
 Phản hồi thử 6.6 cùng ngày xác nhận: nhân viên chỉ xem món mình đang mang và hàng chờ chung; Đã phục vụ/lịch sử chỉ quản lý xem. Phạm vi đọc được áp dụng ở API và UI theo DOMAIN/D027.
@@ -53,7 +55,7 @@ Quyền thu tiền có thể gán cho nhân viên hoặc thu ngân; chưa cần 
 
 1. Tính tiền gọi món thông thường hay có buffet, combo, món theo cân? Đề xuất demo: gọi món theo suất cố định.
 2. 30 tablet cố định hay dùng luân chuyển? Nhân viên có điện thoại/tablet riêng không?
-3. Ai được hủy món trước/sau khi bếp làm? Ai được giảm tiền hoặc sửa xác nhận thanh toán?
+3. Luật hủy demo 6.7 đã chốt theo DOMAIN; quyền giảm tiền khác, sửa xác nhận thanh toán/hoàn tiền còn cần chốt trước module liên quan.
 4. Giá đã gồm các khoản thuế/phí chưa, cần loại chứng từ/in nào? Chưa tự đặt thuế suất.
 5. Có bắt buộc chuyển/gộp bàn hoặc chia bill trong lần dùng thật đầu tiên không?
 6. Ngân sách và thiết bị máy chủ tại quán; hệ điều hành; có thể giữ máy chạy suốt ca không?

@@ -5,7 +5,11 @@ import { loginApi } from './auth-helpers.js'
 // snapshots are tested with PostgreSQL; Verify-GuestOrdering.ps1 runs the complete live flow.
 const session = { id: 6401, tableCode: 'B01', tableName: 'Bàn 01', status: 'OPEN' }
 const emptyBatch = { id: 641, requestKey: '', totalVnd: 90000, createdAt: '2026-10-31T02:00:00Z', items: [{ id: 1, name: 'Gỏi cuốn tôm', quantity: 2, unitPriceVnd: 45000, note: 'Ít cay', status: 'QUEUED' }] }
+function receipt(body: { requestKey: string; items: { menuItemId: number; quantity: number; expectedPriceVnd: number; note: string }[] }) {
+  return { ...emptyBatch, requestKey: body.requestKey, totalVnd: body.items.reduce((sum, line) => sum + line.quantity * line.expectedPriceVnd, 0), items: body.items.map((line, index) => ({ ...emptyBatch.items[0], id: index + 1, menuItemId: line.menuItemId, quantity: line.quantity, unitPriceVnd: line.expectedPriceVnd, note: line.note })) }
+}
 async function setup(page: Page) {
+  await page.route('**/api/guest/sessions/*/cancellations', route => route.fulfill({ json: [] }))
   await page.route('**/api/guest/session', route => route.fulfill({ json: session }))
   await page.route('**/api/guest/sessions/*/orders', route => route.fulfill({ json: [] }))
   await page.goto('/#guest')
@@ -23,7 +27,7 @@ test('cart reviews quantity and notes, prevents double submit and shows server b
     const body = route.request().postDataJSON()
     expect(body.items[0]).toMatchObject({ quantity: 2, note: 'Ít cay', expectedPriceVnd: 45000, optionIds: [] })
     await new Promise(resolve => setTimeout(resolve, 250))
-    return route.fulfill({ json: { ...emptyBatch, requestKey: body.requestKey } })
+    return route.fulfill({ json: receipt(body) })
   })
   await expect(page.getByRole('button', { name: 'Xác nhận gửi món' })).toHaveCount(0)
   await page.getByRole('button', { name: 'Xem lại đợt gọi' }).click()
@@ -37,13 +41,14 @@ test('cart reviews quantity and notes, prevents double submit and shows server b
 test('lost response after save is reconciled by key without a second POST', async ({ page }) => {
   await setup(page)
   let key = '', posts = 0, checks = 0
+  let saved: Parameters<typeof receipt>[0]
   await page.route('**/api/guest/sessions/*/orders', route => {
-    if (route.request().method() === 'POST') { posts++; key = route.request().postDataJSON().requestKey; return route.abort() }
+    if (route.request().method() === 'POST') { posts++; saved = route.request().postDataJSON(); key = saved.requestKey; return route.abort() }
     return route.fulfill({ json: [] })
   })
   await page.route('**/orders/by-key/*', route => {
     checks++; expect(route.request().url()).toContain(key)
-    return route.fulfill({ json: { ...emptyBatch, requestKey: key } })
+    return route.fulfill({ json: receipt(saved) })
   })
   await page.getByRole('button', { name: 'Xem lại đợt gọi' }).click()
   await page.getByRole('button', { name: 'Xác nhận gửi món' }).click()
@@ -57,7 +62,7 @@ test('uncertain attempt survives reload and retries with identical key and paylo
   await page.route('**/api/guest/sessions/*/orders', route => {
     if (route.request().method() !== 'POST') return route.fulfill({ json: [] })
     const body = route.request().postDataJSON(); requests.push(body)
-    return recovered ? route.fulfill({ json: { ...emptyBatch, requestKey: body.requestKey } }) : route.abort()
+    return recovered ? route.fulfill({ json: receipt(body) }) : route.abort()
   })
   await page.route('**/orders/by-key/*', route => recovered ? route.fulfill({ status: 404, json: {} }) : route.abort())
   await page.getByRole('button', { name: 'Xem lại đợt gọi' }).click()
@@ -119,7 +124,7 @@ test('CSRF rejection keeps the pending attempt and retries with the same key', a
     const body = route.request().postDataJSON(); bodies.push(body)
     return bodies.length === 1
       ? route.fulfill({ status: 403, json: { message: 'Kiểm tra CSRF rồi thử lại.' } })
-      : route.fulfill({ json: { ...emptyBatch, requestKey: body.requestKey } })
+      : route.fulfill({ json: receipt(body) })
   })
   await page.route('**/orders/by-key/*', route => route.fulfill({ status: 404, json: {} }))
   await page.getByRole('button', { name: 'Xem lại đợt gọi' }).click()
@@ -129,4 +134,21 @@ test('CSRF rejection keeps the pending attempt and retries with the same key', a
   await page.getByRole('button', { name: 'Kiểm tra và thử gửi lại' }).click()
   await expect(page.getByRole('region', { name: 'Món đã gọi' })).toContainText('Đợt #641')
   expect(bodies).toHaveLength(2); expect(bodies[1]).toEqual(bodies[0])
+})
+
+test('lookup with same key but different content keeps pending and never accepts the other batch', async ({ page }) => {
+  await setup(page)
+  let saved: Parameters<typeof receipt>[0], posts = 0
+  await page.route('**/api/guest/sessions/*/orders', route => {
+    if (route.request().method() !== 'POST') return route.fulfill({ json: [] })
+    saved = route.request().postDataJSON(); posts++; return route.abort()
+  })
+  await page.route('**/orders/by-key/*', route => route.fulfill({ json: receipt({ ...saved, items: saved.items.map(line => ({ ...line, quantity: line.quantity + 1 })) }) }))
+  await page.getByRole('button', { name: 'Xem lại đợt gọi' }).click()
+  await page.getByRole('button', { name: 'Xác nhận gửi món' }).click()
+  await expect(page.getByText('Biên nhận khác nội dung đang chờ. Giữ nguyên lượt gửi và nhờ nhân viên kiểm tra.', { exact: true })).toBeVisible()
+  await expect(page.getByRole('button', { name: 'Kiểm tra và thử gửi lại' })).toBeVisible()
+  await expect(page.getByRole('region', { name: 'Món đã gọi' }).getByRole('article')).toHaveCount(0)
+  await page.getByRole('button', { name: 'Kiểm tra và thử gửi lại' }).click()
+  expect(posts).toBe(1)
 })

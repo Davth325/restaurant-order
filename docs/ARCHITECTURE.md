@@ -2,6 +2,18 @@
 
 Stack đã xác nhận: Java Spring Boot + Gradle, React + TypeScript, PostgreSQL. Các chi tiết triển khai bên dưới vẫn là đề xuất nếu DECISIONS chưa ghi đã xác nhận.
 
+## Ordering và ngoại lệ — 6.7, 03/11/2026
+
+- Giữ stack/dependency/migration cũ. V8 thêm order_batch.created_by nullable FK, đơn khách cũ null. V9 thêm bill_excluded/CANCELLED và ràng buộc giữ mốc chế biến/phục vụ; cancellation_request (UUID, guest hash FK, reason/status/time, partial unique một PENDING/suất), cancellation_operation (UUID, unit/actor/version/action/request/reason/from/to/time, unique unit/version). Không sửa tổng/số lượng/giá đơn gốc khi hủy.
+- STAFF GET `/api/staff/sessions/{id}`, GET/POST `.../orders`, GET `.../orders/by-key/{uuid}`. GuestOrderService dùng chung validation/catalog lock/transaction/hash, kiểm enabled/role, lưu actor server. Idempotency so thêm created_by; tra khóa staff chỉ của chính người thao tác. Batch thêm netTotalVnd, Item thêm excludedQuantity, progress thêm cancelled.
+- Guest GET `/api/guest/sessions/{id}/cancellations` đọc suất trong phiên. POST `.../cancellations/cancel` nhận UUID và ID suất, GET `.../cancel/by-key/{uuid}` tra biên nhận theo thiết bị khách. POST yêu cầu duyệt cũ đã đóng. Mọi route kiểm cookie khách theo phiên, POST giữ CSRF.
+- V10 ghi guest_cancellation với khóa duy nhất, ID suất duy nhất, hash thiết bị, version và thời điểm. Kết thúc yêu cầu PENDING cũ thành SUPERSEDED. Trạng thái suất, giá và lịch sử cũ giữ nguyên qua migration.
+- CancellationService dùng khóa table_session chung với kitchen/serving. Sau khi kiểm phiên và tra khóa, chỉ QUEUED được chuyển CANCELLED và bill_excluded. Ghi biên nhận và trạng thái cùng transaction. Bếp thắng khóa thì khách nhận 409, hủy thắng thì bếp nhận 409. Invalidation phát sau commit.
+- API `/api/cancellations/**` dành cho MANAGER enabled. CANCEL/EXCLUDE là điều chỉnh nội bộ có lý do, kiểm version, khóa phiên và chống trùng. Lịch sử gồm tự hủy của khách và các thao tác nội bộ. Biên nhận quản lý chỉ dành cho người thực hiện. Mã duyệt cũ chỉ trả lại biên nhận đã ghi, luồng mới trả 409 cho APPROVE/REJECT.
+- Kitchen snapshot có guestCancelled, billExcluded và cancellationReason. Bếp xem mục món đã hủy/loại tiền. Hàng nhận mang tự loại CANCELLED. GuestPage tải lại tạm tính sau khi xác nhận hoặc tra được biên nhận tự hủy, khóa lượt chưa rõ kết quả để retry cùng UUID.
+
+- Verify-Exceptions.ps1 tạo DB `verify_exceptions_<guid>`/8081, chạy UI thật và restart/đối chiếu snapshot/tạm tính. Chạy tuần tự với ba verifier cũ, không đóng gói jar khi verifier dùng.
+
 ## Serving đã triển khai — 6.6, 02/11/2026
 
 - Giữ stack/dependency. V7 mở rộng trạng thái FulfillmentUnit, thêm version/actor/time nhận và giao, ràng buộc lifecycle; thêm serving_operation (UUID PK, UNIQUE unit_id + expected_version, actor/action/from/to/reason/giờ database). V1–V6 và seed cũ không sửa. Migration từ V6 giữ nguyên dữ liệu đơn/tiền và tiến độ bếp; version ban đầu 0. Repeatable Java seed mới thêm hai tài khoản theo DOMAIN.

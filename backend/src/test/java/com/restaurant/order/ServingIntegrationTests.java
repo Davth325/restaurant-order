@@ -271,6 +271,7 @@ class ServingIntegrationTests {
                     """);
             var business = jdbc.queryForMap("SELECT * FROM serving_upgrade_test.order_item");
             var batch = jdbc.queryForMap("SELECT * FROM serving_upgrade_test.order_batch");
+            batch.put("created_by", null); // V8 preserves old guest batches without inventing a staff actor.
             String columns = "id, order_item_id, unit_number, status, started_at, started_by, ready_at, ready_by";
             var portions = jdbc.queryForList("SELECT " + columns + " FROM serving_upgrade_test.fulfillment_unit ORDER BY unit_number");
             org.flywaydb.core.Flyway.configure().dataSource(dataSource).schemas(schema).defaultSchema(schema)

@@ -38,7 +38,7 @@ public class GuestOrderController {
                 .secure(secure).sameSite("Strict").path("/api/guest").maxAge(Duration.ofHours(12)).build().toString());
         return ok(binding.session());
     }
-    private static String token(HttpServletRequest request) {
+    public static String token(HttpServletRequest request) {
         if (request.getCookies() != null) for (var cookie : request.getCookies())
             if (cookie.getName().equals("GUEST_DEVICE")) return cookie.getValue();
         return null;
@@ -53,4 +53,12 @@ public class GuestOrderController {
     ResponseEntity<GuestOrderService.Batch> submit(@PathVariable long id, @RequestBody GuestOrderService.Submit body, HttpServletRequest request) {
         return ok(service.submit(token(request), id, body));
     }
+    @GetMapping("/api/staff/sessions/{id}")
+    ResponseEntity<GuestOrderService.GuestSession> staffSession(@PathVariable long id, Principal principal) { return ok(service.staffSession(principal.getName(), id)); }
+    @GetMapping("/api/staff/sessions/{id}/orders")
+    ResponseEntity<List<GuestOrderService.Batch>> staffOrders(@PathVariable long id, Principal principal) { return ok(service.staffOrders(principal.getName(), id)); }
+    @GetMapping("/api/staff/sessions/{id}/orders/by-key/{key}")
+    ResponseEntity<GuestOrderService.Batch> staffByKey(@PathVariable long id, @PathVariable UUID key, Principal principal) { return ok(service.staffByKey(principal.getName(), id, key)); }
+    @PostMapping("/api/staff/sessions/{id}/orders")
+    ResponseEntity<GuestOrderService.Batch> staffSubmit(@PathVariable long id, @RequestBody GuestOrderService.Submit body, Principal principal) { return ok(service.staffSubmit(principal.getName(), id, body)); }
 }

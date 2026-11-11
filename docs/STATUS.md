@@ -1,6 +1,64 @@
 # Trạng thái hiện tại
 
-Cập nhật mới nhất: **02/11/2026 — 6.6 đã chốt, commit/push và CI Linux thành công tại f9b3ce0.** Nhân viên chỉ có Chờ mang/Đang mang của mình; quản lý có Đã phục vụ và lịch sử. Đã sửa thêm tràn điều hướng mobile do CI phát hiện, giữ nguyên nghiệp vụ đã thử. Bước tiếp: **6.7 — gọi thêm và ngoại lệ**, chưa tự triển khai.
+Cập nhật mới nhất ngày **11/11/2026**. Chủ dự án đã thử và chốt 6.7 theo D029. Khách tự hủy suất còn chờ bếp, không nhập lý do hay chờ duyệt. Bản demo tại http://127.0.0.1:8080. Bước tiếp là **6.8 — tính và thu tiền**.
+
+- V10 lưu biên nhận tự hủy cùng transaction với cập nhật suất và tạm tính. Yêu cầu chờ duyệt cũ được kết thúc mà không thay đổi suất hay tiền. Luồng điều chỉnh nội bộ của quản lý có lý do và lịch sử riêng.
+- Đã review quyền khách theo phiên, CSRF, quyền quản lý, retry cùng khóa, mất phản hồi và cuộc đua với bếp. Khóa phiên chung bảo đảm một trong hai thao tác thắng. Chỉ suất hủy thành công bị loại khỏi tạm tính.
+- `backend/gradlew.bat -p backend --no-daemon test` đạt 49/49. Frontend `typecheck`, `lint`, `build` và Gradle `bootJar` đạt. `Start-Preview.ps1` mở bản mới và Flyway áp dụng V10 thành công trên volume demo.
+- Lượt đầu Playwright thiếu Chromium. Đã cài qua `npm.cmd --prefix frontend exec -- playwright install chromium` với `PLAYWRIGHT_BROWSERS_PATH` trỏ vào `.work/playwright`. Chạy lại `npm.cmd --prefix frontend run test:e2e` với `E2E_BASE_URL=http://127.0.0.1:8080` đạt 55/55.
+- `scripts/Verify-Exceptions.ps1` exit 0 trên database tạm. Khách tự hủy đúng một suất sau khi mất phản hồi, tạm tính từ 225.000đ xuống 180.000đ, bếp thấy kết quả. Suất bếp đã bắt đầu trả 409 và giữ nguyên tạm tính. Sau điều chỉnh nội bộ, verifier đối chiếu 90.000đ, biên nhận và lịch sử qua restart. Chưa kiểm thiết bị thật và CI Linux cho thay đổi D029.
+
+Các mục dưới đây ghi kết quả của các lượt trước thay đổi D029.
+
+Ngày 11/11/2026, đã mở lại Docker Desktop, chạy `scripts/dev.ps1 db` và `scripts/Start-Preview.ps1` với jar 6.7 đã đóng gói và volume demo hiện có. PostgreSQL healthy, schema ở V9, health UP, trang chủ và `/api/menu` trả HTTP 200. Lượt này kiểm tra khởi động để chủ dự án thử 6.7. Kết quả kiểm thử nghiệp vụ nằm ở mục bên dưới.
+
+## Gọi thêm, hết món, hủy và chống trùng — 6.7, 03/11/2026
+
+### Đã thực hiện
+
+- Đầu lượt: nhánh main sạch tại f839bf1; code 6.6 hiện có đầy đủ, STATUS ghi commit chức năng 51e31b8 và CI bản sửa f9b3ce0 thành công. Không chạy CI mới hoặc coi ghi chú kế hoạch là chức năng đã có. Giữ Java/Spring Boot/Gradle/React/PostgreSQL và dependency, giữ .env/volume/đơn demo.
+- Đã khởi động Docker Desktop từ đường dẫn cài thực tế (CLI desktop start không tìm được registry); PostgreSQL healthy. Initialize-Dev bảo toàn giá trị cũ. Gradle/Docker/Chromium cần chạy ngoài sandbox để truy cập daemon/socket/localhost, không đổi bảo vệ ứng dụng hoặc mở LAN.
+- Tái sử dụng gửi toàn đợt/khóa phiên/catalog lock/hash/idempotency 6.4. Bổ sung STAFF gọi thay qua API và giỏ UI chung, actor database từ principal (V8); không kế thừa quyền này cho MANAGER. Khác payload/nhân viên/kênh cùng khóa trả 409. Tăng kiểm tra receipt UI tới từng món/số lượng/giá/ghi chú, không giải phóng pending nếu cùng khóa nhưng khác nội dung. Chặn tổng gốc tích lũy vượt giới hạn JSON an toàn.
+- V9 lưu yêu cầu hủy từng suất, trạng thái xử lý và lịch sử quyết định cùng transaction. STAFF chỉ xử lý QUEUED; món bắt đầu/xong/đang mang cần MANAGER; SERVED giữ trạng thái và chỉ loại khỏi tạm tính. Bắt buộc lý do, UUID/version bảo vệ retry/đồng thời; journal lỗi rollback cả tiền/trạng thái/yêu cầu. Không sửa V1–V7 hoặc xóa lịch sử cũ.
+- UI khách gửi yêu cầu, xem chờ/duyệt/từ chối; nhân viên/quản lý xử lý từ Mang món/Giám sát phục vụ → Yêu cầu hủy và ngoại lệ. MANAGER xem mọi suất, hủy trực tiếp/loại SERVED/lịch sử tiếng Việt. Server giới hạn workspace/history theo quyền hiện tại, không chỉ ẩn nút.
+- Bếp nhận invalidation sau commit, thêm mục Yêu cầu / đã hủy với trạng thái ngừng làm/không mang và lý do. Snapshot/polling/reload giữ kết quả; serving không nhận CANCELLED. totalVnd gốc giữ nguyên, netTotalVnd từ suất chưa loại; UI cộng tạm tính cùng phiên và nêu tổng gốc khi có giảm. Chưa tạo Bill/thu tiền/thuế/phí hoặc hoàn tiền.
+- Cập nhật AGENTS/README/PRODUCT/DOMAIN/ARCHITECTURE/UX/DECISIONS/TESTING/OPERATIONS và verifier riêng; cách tự thử ở README mục 6.7. Không còn phần nghiệp vụ đang dở chặn thử local; bằng chứng bản đóng gói cuối ở bảng dưới.
+
+### Bằng chứng đã chạy
+
+| Lệnh / kiểm tra | Kết quả thực tế |
+| --- | --- |
+| scripts/Initialize-Dev.ps1; scripts/dev.ps1 db | .env giữ nguyên; PostgreSQL healthy, không reset volume |
+| Dot-source scripts/Use-Java21.ps1; backend/gradlew.bat -p backend --no-daemon build | Exit 0, XML **49 test, 0 failures/errors**, gồm 7 CancellationIntegrationTests và 42 hồi quy |
+| CancellationIntegrationTests | HTTP/cookie/CSRF/PostgreSQL thật; nhiều đợt/gọi thay/actor/khóa/tiền; duyệt/từ chối/request lại; đủ trạng thái/quyền/lý do; direct CANCEL/EXCLUDE; receipt/history/disabled/CLOSED/sai phiên; journal failure rollback. Hai transaction thật chờ cùng row lock (pg_stat_activity) rồi hủy hoặc bếp thắng, bên kia 409. Migration V7 → V9 giữ toàn bộ actor/time/version/giá/đơn cũ |
+| npm.cmd --prefix frontend run typecheck / run lint / run build; Gradle bootJar | Exit 0. Bản cuối Việt hóa lịch sử hủy và gỡ dữ liệu/lịch sử khi phiên nội bộ hết quyền, không đổi backend |
+| E2E_BASE_URL=http://127.0.0.1:8080; npm.cmd --prefix frontend run test:e2e | **55/55 Chromium đạt trên jar cuối**, 34,4 giây; gồm pending/reload, xung đột chuyển quản lý, EXCLUDE/reason/history/ba kích thước, same-key receipt sai nội dung và hết quyền phải gỡ lịch sử rồi yêu cầu đăng nhập |
+| scripts/Verify-Exceptions.ps1 | **Jar cuối exit 0:** UI/API/database/restart đúng **2 đợt/225.000đ gốc/5 suất/3 quyết định; 2 CANCELLED + 1 SERVED bị loại + 2 QUEUED, tạm tính 90.000đ**. Gọi thay và yêu cầu hủy mất response đã commit/reload không POST trùng; bếp thấy lý do; restart giữ nguyên snapshot/actor/time/reason/credential. DB tạm đã dọn sau lượt cuối |
+| scripts/Verify-GuestOrdering.ps1 | Exit 0; hai tablet/phiên/giá/chống trùng/mất response/reload/restart, đúng 3 đợt/210.000đ; DB tạm đã dọn |
+| scripts/Verify-Kitchen.ps1 | Exit 0; hai bếp/SSE/từng suất/tự ẩn đợt/polling/offline/reconnect/reload/restart, đúng 3 đợt/225.000đ/5 suất/3 READY; DB tạm đã dọn |
+| scripts/Verify-Serving.ps1 | Exit 0; hai STAFF tranh chấp 204/409, partial service/manager return/history/receipt/polling/offline/restart, đúng 2 đợt/180.000đ/4 suất/6 thao tác; DB tạm đã dọn |
+| Layout/review | 768×1024, 1024×768, 375×812 không tràn ngang, nút ≥44px; đã xem .work/exceptions-manager.png. git diff --check, parse scripts PowerShell và scan-review.cjs đạt; 147 source file + bundle/preview log không thấy 5 secret local đã biết hoặc mẫu private key/GitHub token |
+
+Ba verifier cũ chạy tuần tự trên backend cuối, trước hai chỉnh sửa chỉ ở CancellationPanel (Việt hóa lịch sử và gỡ dữ liệu khi hết quyền); không coi mock UI là bằng chứng database. Không rebuild jar trong lúc verifier đang chạy.
+
+Đã review diff service/controller/security/migration/UI/test/script về quyền khách theo phiên, quyền actor hiện tại, giá gốc/tạm tính, không trùng hoặc mất đợt/suất, thứ tự khóa khi bếp và hủy tranh chấp, rollback lịch sử, dữ liệu cũ, mất response và reload. Không phát dữ liệu trước commit, không reset demo, không thấy lỗi chặn thử local trong phạm vi 6.7.
+
+### Lỗi phát hiện và xử lý
+
+- Hai test migration cũ dùng SELECT * so batch nên phát hiện thêm created_by. Đã giữ đối chiếu tất cả cột cũ và thêm kỳ vọng cột mới null (không tự gán actor cho đơn khách cũ); chạy lại toàn backend đạt. Test nâng V7 thêm riêng để giữ PICKED_UP/SERVED/actor/time/version.
+- Thêm mục chính vào sidebar làm hồi quy màn hình thấp/mobile fail. Chuyển lối vào xử lý hủy vào khu vực làm việc, giữ ngưỡng chiều cao/vùng bấm cũ; các ca hồi quy đạt lại, không nới test hoặc yêu cầu giảm zoom.
+- Receipt mock cũ mặc định hai suất dù request một suất; đổi fixture nhận đúng payload và thêm ca biên nhận sai nội dung phải khóa pending. Không bỏ kiểm tra chống trùng hoặc sửa nghiệp vụ để test xanh.
+- Verifier mới ban đầu reload ngay khi thấy nút pending, trước POST thực sự commit; sửa mô phỏng đợi response server 200 rồi mới cắt phản hồi/reload. Một selector nhãn CANCELLED khớp cả span và strong, sửa chọn nhãn chính xác. Test UI tương tự cũng được sửa chờ POST thực sự tới mock trước khi reload; test hết quyền dùng đúng heading Đăng nhập hiện có. Chạy lại đầy đủ live + restart đã đạt; không bỏ bước kiểm database/restart.
+
+### Tự thử / còn chờ
+
+- Đọc demo sau kiểm tra: **30 bàn/5 phiên/6 đợt/11 suất SERVED/0 cancellation_operation/0 đợt created_by STAFF**; không tạo/hủy đơn demo bằng kiểm thử. Preview health UP; không còn database verify sau khi verifier hoàn tất.
+- Preview UI/API tại http://127.0.0.1:8080; mở /#tables để gọi thay, /#guest trong browser khách riêng, /#serving rồi Yêu cầu hủy và ngoại lệ, hoặc /#cancellations. Ctrl+F5 từng cửa sổ cũ, đăng nhập lại sau restart; không xóa storage khi pending.
+- nhanvien/nhanvien2: DEMO_STAFF_PASSWORD/DEMO_STAFF2_PASSWORD; bep: DEMO_KITCHEN_PASSWORD; quanly: DEMO_MANAGER_PASSWORD. Mật khẩu local trong .env tại root, không có mật khẩu chung trong Git/chat. Dùng browser/profile tách cookie. README có bảy bước tự thử.
+- Chưa kiểm Safari/iPad/thiết bị thật/ngủ-thức/LAN/WAN/HTTPS/tải 30 bàn/backup-restore. Hiện Chromium/Windows/localhost; không cần tablet thật để nghiệm thu này. Chưa có thu tiền/chốt bill, cấu hình LAN hoặc quản trị menu; không tự mở rộng ngoài 6.7.
+- Chờ người dùng thử và lời nhắn kết thúc để chốt commit/push/CI. Không lấy CI 6.6 làm bằng chứng 6.7. Tiếp theo 6.8 — tính và thu tiền, chưa triển khai.
+
+Các mục 6.6 trở xuống là lịch sử; trạng thái hiện tại theo mục 6.7 phía trên.
 
 ## Kết quả commit/push/CI 6.6 — 02/11/2026
 

@@ -1,5 +1,14 @@
 # Màn hình và tương tác
 
+## Gọi thêm, gọi thay và hủy — 6.7
+
+- Đã gọi giữ từng đợt, tổng cả phiên và số suất hủy/loại tiền. Khi đợt giảm tiền, hiện cả tổng gốc và tổng còn tính. Tải lại món đã gọi để xem thay đổi từ thiết bị khác; chưa phải bill.
+- Nhân viên chọn bàn → Gọi thay khách / xem tạm tính, dùng giỏ/xem lại/xác nhận/khôi phục timeout như khách; vẫn giữ sidebar nội bộ. Lưu người gọi thay server, pending tách username/phiên.
+- Khách chọn **Hủy suất** và xác nhận ngay trong thẻ suất còn chờ bếp. Kết quả hủy xuất hiện cùng tạm tính mới. Khi bếp bắt đầu trước xác nhận, khách thấy thông báo và nút hủy biến mất sau khi cập nhật trạng thái.
+- Quản lý mở **Điều chỉnh món** từ màn hình giám sát để xử lý nội bộ và xem lịch sử. Màn hình hiển thị các suất theo bàn. Hủy trực tiếp hoặc loại khỏi tạm tính cần lý do.
+- Bếp mở **Món đã hủy / loại tiền** để xem suất khách tự hủy hoặc được quản lý điều chỉnh. Suất CANCELLED không có nút bắt đầu làm hay nhận mang.
+- Mất response giữ pending/khóa lệnh mới, tra receipt trước retry; khác nội dung không giải phóng. Snapshot lỗi giữ cảnh báo/khóa thao tác mới. Nút ≥44px, giữ sidebar cũ; vẫn cần thử thiết bị mục tiêu sau local.
+
 ## Nhân viên nhận mang và xác nhận phục vụ — 6.6
 
 - Nhân viên vào **Mang món** (`/#serving`), chỉ có Chờ mang / Đang mang; quản lý có thêm Đã phục vụ. Mỗi thẻ hiện bàn, phiên, đợt, món, ghi chú, số suất trong mục/tổng đã gọi. Chờ từng suất tính từ lúc bếp xong, không tính từ lúc gửi món.

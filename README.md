@@ -1,8 +1,22 @@
 # Ứng dụng gọi món nhà hàng
 
-Bộ khung M1 tới bước **6.6 — nhận mang và xác nhận phục vụ**: Java 21 + Spring Boot + Gradle Wrapper, React + TypeScript + Vite, PostgreSQL + Flyway + Spring Security. Menu/30 bàn/phiên/đợt gọi lấy từ database thật. Nhân viên mở phiên, gắn tablet; khách gửi món chống trùng; bếp làm từng suất; nhân viên nhận mang/giao từng suất và quản lý giám sát trực tiếp. Chưa có đóng/dọn bàn, hủy hoặc thu tiền.
+Bộ khung M1 tới bước **6.7 — gọi thêm, hết món, hủy và chống trùng**: giữ Java 21 + Spring Boot + Gradle Wrapper, React + TypeScript + Vite, PostgreSQL + Flyway + Spring Security. Khách gọi nhiều đợt/tạm tính; nhân viên gọi thay; khách tự hủy từng suất còn chờ bếp và bếp nhận thông báo; giữ lịch sử giá/đợt/phục vụ. Chưa có đóng/dọn bàn hoặc thu tiền.
 
 Phạm vi sản phẩm giữ nguyên: demo 30 bàn, một bếp, QR do nhân viên kiểm tra và xác nhận. Kiến trúc máy chủ tại quán chạy qua LAN khi mất Internet vẫn là đề xuất; chưa kiểm chứng vận hành tại quán. [Phạm vi](docs/PRODUCT.md) · [Quyết định](docs/DECISIONS.md) · [Trạng thái thực tế](docs/STATUS.md).
+
+## Tự thử gọi thêm, gọi thay và hủy — 6.7
+
+Mở [ứng dụng](http://127.0.0.1:8080), Ctrl+F5 ở các cửa sổ cũ. Mật khẩu ở `.env` local: nhanvien → DEMO_STAFF_PASSWORD, bep → DEMO_KITCHEN_PASSWORD, quanly → DEMO_MANAGER_PASSWORD. Dùng profile/browser tách cookie cho từng vai trò; guest dùng cửa sổ riêng đã gắn đúng phiên theo mục 6.4. Không cần tablet thật cho nghiệm thu local.
+
+1. Khách gửi một đợt rồi thêm món/gửi lần hai. Món đã gọi giữ cả hai đợt, tổng cả phiên cộng đầy đủ. Tải lại/reload vẫn còn. Món hết/giá đổi bị từ chối cả đợt, sửa giỏ và xem lại trước gửi; chưa có giao diện quản trị menu trong 6.7.
+2. Nhân viên vào Sơ đồ bàn → chọn bàn → **Gọi thay khách / xem tạm tính Bxx**, thêm/xem lại/gửi. Đợt này lưu tài khoản thao tác tại server và hiện cùng các đợt khách. Khi mất response giữ đúng lượt gửi, tra trước retry cùng khóa.
+3. Khách xuống **Hủy suất còn chờ bếp** → chọn đúng món và suất → **Xác nhận hủy suất**. Suất được hủy ngay và tạm tính giảm đúng giá suất. Không cần lý do hay tài khoản duyệt.
+4. Bếp mở [Khu vực bếp](http://127.0.0.1:8080/#kitchen) → **Món đã hủy / loại tiền** để xem suất khách vừa hủy.
+5. Bếp bắt đầu một suất khác. Khách tải lại trạng thái để thấy nút hủy biến mất. Nếu bếp bắt đầu trước khi xác nhận hủy, server báo xung đột và giữ tạm tính.
+6. Quản lý dùng [Điều chỉnh món](http://127.0.0.1:8080/#cancellations) cho trường hợp nội bộ cần hủy hoặc loại khỏi tạm tính, có lý do và lịch sử.
+7. Khi món đã hủy/loại, danh sách đợt hiển thị tổng gốc và tổng còn tính. Tạm tính chưa phải bill đã chốt/thu tiền; bước 6.8 chưa có. F5 không reset đơn demo; chưa có đóng/dọn bàn, chỉ mở bàn muốn giữ để thử.
+
+Kiểm tra live cách ly demo (sau build/db, Chromium và cổng 8081 trống): `scripts/Verify-Exceptions.ps1`. Script gọi hai đợt/225.000đ gốc, hủy/loại ba trong năm suất, đối chiếu còn 90.000đ và restart; tự dọn DB tạm. Chạy tuần tự với Verify-GuestOrdering/Kitchen/Serving, không rebuild jar lúc verifier đang chạy. Kết quả thực tế ở STATUS.
 
 ## Chuẩn bị trên Windows
 

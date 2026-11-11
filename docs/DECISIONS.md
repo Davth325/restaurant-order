@@ -14,7 +14,7 @@
 | D010 | Đề xuất | Một bill thanh toán toàn bộ một lần | Giới hạn độ phức tạp demo; cần xác nhận lại trước dùng thật. |
 | D011 | Đề xuất | Không đồng bộ ghi độc lập trên mọi tablet ở MVP | Dùng máy chủ local giải quyết mất Internet; sự cố LAN/server có quy trình thủ công. |
 | D012 | Chưa quyết định | Thuế/phí, chứng từ, điều chỉnh và hoàn tiền | Cần nghiệp vụ thật từ chủ quán. |
-| D013 | Chưa quyết định | Cách hủy/giảm tiền và vai trò thu ngân | DOMAIN đang là quy tắc gợi ý. |
+| D013 | Hủy 6.7 cập nhật 11/11/2026; tiền khác chưa quyết định | Hủy theo trạng thái; giảm tiền khác/vai trò thu ngân còn chờ | Chính sách hiện tại ở D029/DOMAIN. Quy trình thu tiền/hoàn tiền còn chờ. |
 | D014 | Chưa quyết định | Máy chủ, HTTPS nội bộ, số tablet, topology Wi-Fi | Chọn sau khảo sát thiết bị và thử tải. |
 | D015 | Đã xác nhận | PostgreSQL | Chủ dự án yêu cầu giữ PostgreSQL ngày 29/10/2026; phiên bản cụ thể chốt sau smoke test M1. |
 | D016 | Đã xác nhận | Docker Desktop + Compose cho PostgreSQL trên máy phát triển | Chủ dự án chọn ngày 29/10/2026 để dựng database lặp lại được; chưa quyết định Docker/native cho máy tại quán. |
@@ -26,6 +26,18 @@
 | D022 | Đã triển khai bước 6.4 — 31/10/2026 | Mã ghép một lần do STAFF cấp; cookie khách riêng/hash PostgreSQL; gửi toàn đợt bằng UUID + khóa phiên + snapshot giá | Theo yêu cầu chủ dự án về quyền khách, không sai bàn, không trùng đơn và giá do backend kiểm tra. Codex chọn mặc định kỹ thuật, thời hạn/giới hạn demo và cho phép nhiều thiết bị được cấp riêng cùng phiên; không chốt chính sách thiết bị/menu thật. Menu chưa có option nên chỉ chấp nhận tập rỗng. V5 không sửa migration cũ, giữ localhost; bếp để 6.5. DOMAIN/ARCHITECTURE là nguồn chi tiết. |
 
 Khi thay đổi: thêm ngày, người chốt, lý do, phần bị ảnh hưởng, quyết định cũ được thay thế. Không biến đề xuất thành “đã xác nhận” chỉ vì Codex đã bắt đầu code.
+
+## D029 — Khách tự hủy suất còn chờ bếp, 11/11/2026
+
+Chủ dự án yêu cầu bỏ luồng duyệt và ô lý do của khách. Khách xác nhận hủy từng suất QUEUED, có hiệu lực ngay. Từ lúc bếp bắt đầu, backend chặn khách hủy. Quyết định này thay phần duyệt hủy trong D028. Điều chỉnh nội bộ của quản lý vẫn là thao tác riêng có lý do.
+
+V10 giữ lịch sử cũ và kết thúc yêu cầu PENDING cũ dưới trạng thái SUPERSEDED, giữ nguyên suất và tiền. Chọn endpoint và khóa lưu trên trình duyệt riêng cho thao tác tự hủy để nút hoặc lượt gửi từ phiên bản cũ không tự chuyển thành lệnh hủy. Luật hiện tại ở DOMAIN.
+
+## D028 — Chính sách hủy và gọi thay 6.7, 03/11/2026
+
+Chủ dự án trả lời **“Đồng ý chính sách đề xuất”** trước code phụ thuộc: khách yêu cầu từng suất; STAFF duyệt/từ chối khi QUEUED; PREPARING/READY/PICKED_UP chỉ MANAGER hủy có lý do/loại tiền/báo bếp; SERVED giữ trạng thái, chỉ MANAGER loại khỏi tạm tính; bếp bắt đầu trước STAFF duyệt thì xung đột và chuyển quản lý. DOMAIN là nguồn luật chi tiết. Chỉ phần hủy D013 được chốt, không mở rộng thu tiền/giảm giá/hoàn tiền.
+
+Codex tiếp nối idempotency/khóa phiên, V8 lưu actor gọi thay và V9 lưu yêu cầu/quyết định/bill_excluded, không sửa V1–V7. Giữ giá/tổng gốc để đối chiếu, tạm tính mới từ suất chưa loại. Expected version bảo vệ hủy đồng thời bếp/serving; lịch sử cùng transaction, SSE sau commit và snapshot phục hồi. Chưa tạo Bill/6.8. Lối vào xử lý hủy ở Mang món/Giám sát phục vụ để giữ sidebar thấp đã nghiệm thu. Bằng chứng thực chạy ở STATUS.
 
 ## Rà soát trước bộ khung — 29/10/2026
 

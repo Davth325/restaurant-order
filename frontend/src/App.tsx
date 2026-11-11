@@ -4,6 +4,7 @@ import TablesPage from './TablesPage'
 import LoginPage from './LoginPage'
 import KitchenPage from './KitchenPage'
 import ServingPage from './ServingPage'
+import CancellationPanel from './CancellationPanel'
 import GuestPage from './GuestPage'
 import { authPost, currentStaff, type Staff } from './auth'
 import './App.css'
@@ -16,7 +17,8 @@ function App() {
   const [sessionError, setSessionError] = useState('')
   const [loggingOut, setLoggingOut] = useState(false)
   const version = useRef(0)
-  const protectedPage = route === '#tables' || route === '#kitchen' || route === '#serving'
+  const staffOrderId = /^#order\/(\d+)$/.exec(route)?.[1]
+  const protectedPage = !!staffOrderId || route === '#cancellations' || route === '#tables' || route === '#kitchen' || route === '#serving'
   const showTables = route === '#tables'
   const home = staff?.role === 'KITCHEN' ? '#kitchen' : staff?.role === 'MANAGER' ? '#serving' : '#tables'
 
@@ -93,12 +95,14 @@ function App() {
     }
   }
 
-  const allowed = staff && ((showTables && staff.role === 'STAFF') || (route === '#kitchen' && staff.role === 'KITCHEN') || (route === '#serving' && ['STAFF', 'MANAGER'].includes(staff.role)))
+  const allowed = staff && (((showTables || !!staffOrderId) && staff.role === 'STAFF') || (route === '#cancellations' && staff.role === 'MANAGER') || (route === '#kitchen' && staff.role === 'KITCHEN') || (route === '#serving' && ['STAFF', 'MANAGER'].includes(staff.role)))
   let content
   if (protectedPage && checking) content = <main><p role="status">Đang kiểm tra phiên đăng nhập…</p></main>
   else if (protectedPage && sessionError && !staff) content = <main><div className="error-banner" role="alert"><p>{sessionError}</p><button onClick={() => void checkSession()}>Thử lại</button></div></main>
   else if ((protectedPage || route === '#login') && !staff) content = <LoginPage onLogin={loggedIn} notice={notice} />
   else if (protectedPage && !allowed) content = <main className="internal-page"><h1>Không có quyền truy cập</h1><p className="intro">Tài khoản này không có quyền vào khu vực được chọn.</p><a className="text-link" href={home}>Về khu vực làm việc</a></main>
+  else if (staffOrderId && staff) content = <GuestPage key={`${staff.username}:${staffOrderId}`} staffOrder={{ username: staff.username, sessionId: Number(staffOrderId) }} />
+  else if (route === '#cancellations' && staff) content = <main><h1>Điều chỉnh món</h1><CancellationPanel key={staff.username} staff={staff} onUnauthorized={expired} /></main>
   else if (route === '#serving' && staff) content = <ServingPage key={staff.username} staff={staff} onUnauthorized={expired} />
   else if (showTables) content = <TablesPage onUnauthorized={expired} />
   else if (route === '#kitchen') content = <KitchenPage onUnauthorized={expired} />
@@ -137,7 +141,7 @@ function App() {
       </aside>
       <div className="workspace">
         <header className="topbar">
-          <span>Nhà hàng <span className="breadcrumb">/</span> <strong>{showTables ? 'Sơ đồ bàn' : route === '#kitchen' ? 'Bếp' : route === '#serving' ? 'Mang món' : route === '#login' ? 'Đăng nhập' : 'Thực đơn'}</strong></span>
+          <span>Nhà hàng <span className="breadcrumb">/</span> <strong>{route === '#cancellations' ? 'Điều chỉnh món' : staffOrderId ? 'Gọi thay khách' : showTables ? 'Sơ đồ bàn' : route === '#kitchen' ? 'Bếp' : route === '#serving' ? 'Mang món' : route === '#login' ? 'Đăng nhập' : 'Thực đơn'}</strong></span>
           <span className="demo-tag">BẢN DEMO</span>
         </header>
         {sessionError && staff && <div className="error-banner" role="alert">{sessionError}</div>}
